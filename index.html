@@ -7,7 +7,6 @@
   <meta name="theme-color" content="#0f172a">
   <style>
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
     body{
       margin:0;
       min-height:100vh;
@@ -20,13 +19,12 @@
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      padding:22px;
-      padding-top:max(18px,env(safe-area-inset-top));
+      padding:18px;
+      padding-top:max(14px,env(safe-area-inset-top));
     }
     .card{
       width:min(100%,520px);
-      margin-top:0;
-      background:rgba(255,255,255,.91);
+      background:rgba(255,255,255,.92);
       border:1px solid rgba(148,163,184,.24);
       border-radius:30px;
       box-shadow:0 28px 90px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.9);
@@ -36,7 +34,7 @@
     .card:before{
       content:"";
       position:absolute;
-      left:20px; right:20px; top:0;
+      left:20px;right:20px;top:0;
       height:5px;
       border-radius:999px;
       background:linear-gradient(90deg,transparent,#38bdf8,#8b5cf6,#22c55e,transparent);
@@ -45,77 +43,35 @@
     }
     .inner{padding:28px 24px 22px}
     .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:9px 12px;
-      border-radius:999px;
-      background:#eef6ff;
-      border:1px solid #bfdbfe;
-      color:#1e40af;
-      font-size:12px;
-      font-weight:900;
-      margin-bottom:15px;
+      display:inline-flex;align-items:center;gap:8px;
+      padding:9px 12px;border-radius:999px;
+      background:#eef6ff;border:1px solid #bfdbfe;color:#1e40af;
+      font-size:12px;font-weight:900;margin-bottom:15px;
     }
-    h1{
-      margin:0 0 8px;
-      font-size:28px;
-      line-height:1.08;
-      letter-spacing:-.04em;
-    }
+    h1{margin:0 0 8px;font-size:28px;line-height:1.08;letter-spacing:-.04em}
     p{margin:0 0 16px;color:#475569;line-height:1.55;font-size:14px}
     .emailBox{
-      padding:13px 14px;
-      border-radius:18px;
-      background:#f8fafc;
-      border:1px solid #e2e8f0;
-      font-size:14px;
-      font-weight:800;
-      word-break:break-word;
-      margin:12px 0 16px;
+      padding:13px 14px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0;
+      font-size:14px;font-weight:800;word-break:break-word;margin:12px 0 16px;
     }
     button{
-      width:100%;
-      min-height:52px;
-      border:0;
-      border-radius:20px;
-      cursor:pointer;
-      font-weight:950;
-      color:#fff;
+      width:100%;min-height:52px;border:0;border-radius:20px;cursor:pointer;font-weight:950;color:#fff;
       background:linear-gradient(135deg,#2563eb,#06b6d4 52%,#22c55e);
-      box-shadow:0 18px 42px rgba(37,99,235,.25);
-      font-size:15px;
-      transition:.2s ease;
-      padding:12px 14px;
+      box-shadow:0 18px 42px rgba(37,99,235,.25);font-size:15px;transition:.2s ease;padding:12px 14px;
     }
     button:hover{transform:translateY(-1px)}
     button:disabled{opacity:.7;cursor:wait;transform:none}
-    .secondary{
-      margin-top:10px;
-      background:linear-gradient(135deg,#0f172a,#1e293b);
-      box-shadow:0 14px 34px rgba(15,23,42,.22);
-    }
+    .secondary{margin-top:10px;background:linear-gradient(135deg,#0f172a,#1e293b);box-shadow:0 14px 34px rgba(15,23,42,.22)}
+    .ghost{margin-top:10px;background:linear-gradient(135deg,#64748b,#334155);box-shadow:0 12px 28px rgba(51,65,85,.18)}
     .status{
-      margin-top:16px;
-      padding:14px;
-      border-radius:20px;
-      background:#f8fafc;
-      border:1px solid #e2e8f0;
-      color:#334155;
-      font-size:13px;
-      line-height:1.5;
-      white-space:pre-wrap;
-      word-break:break-word;
+      margin-top:16px;padding:14px;border-radius:20px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;
+      font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;
     }
     .ok{background:#ecfdf5;border-color:#86efac;color:#166534}
     .warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
     .bad{background:#fff1f2;border-color:#fca5a5;color:#991b1b}
     .small{font-size:12px;color:#64748b;margin-top:14px;line-height:1.45}
-    @keyframes sweep{
-      0%{background-position:160% 0;opacity:.65}
-      50%{opacity:1}
-      100%{background-position:-60% 0;opacity:.75}
-    }
+    @keyframes sweep{0%{background-position:160% 0;opacity:.65}50%{opacity:1}100%{background-position:-60% 0;opacity:.75}}
   </style>
 </head>
 <body>
@@ -123,22 +79,16 @@
     <div class="inner">
       <div class="badge">🔔 MAX-USE FCM Notifier</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
-      <p>
-        Halaman ini dipakai satu kali untuk mengaktifkan token notifikasi perangkat.
-        Setelah aktif, notifikasi berkas masuk bisa tampil seperti notifikasi aplikasi di HP/Desktop.
-      </p>
+      <p>Halaman ini dipakai satu kali untuk mengaktifkan token notifikasi perangkat. Setelah aktif, notifikasi berkas masuk bisa tampil seperti notifikasi aplikasi di HP/Desktop.</p>
 
       <div class="emailBox" id="emailBox">Email belum terbaca</div>
 
       <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan Notifikasi di Perangkat Ini</button>
       <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
+      <button class="ghost" id="manualBtn" onclick="openManualSave()" style="display:none;">🛠️ Simpan Token Manual</button>
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
-
-      <div class="small">
-        Jika berhasil tetapi halaman belum membaca balasan server, cek sheet <b>06_FCM_TOKENS</b>.
-        Token tetap dikirim lewat mode fallback.
-      </div>
+      <div class="small">Versi V4: mode simpan token memakai JSONP → fetch no-cors → manual link cadangan.</div>
     </div>
   </main>
 
@@ -146,12 +96,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 
   <script>
-    /*********************************************************
-     * MAX-USE TEMPLATE KANTAH v1
-     * FILE: index.html
-     * VERSION: V3_FINAL_APPS_SCRIPT_FALLBACK
-     *********************************************************/
-
     const firebaseConfig = {
       apiKey: "AIzaSyBu_dozVu0jC71-PuJn4h7eC33eWsjcxuc",
       authDomain: "max-use-template-kantah-v1.firebaseapp.com",
@@ -171,6 +115,10 @@
     const emailBox = document.getElementById("emailBox");
     const statusBox = document.getElementById("statusBox");
     const activateBtn = document.getElementById("activateBtn");
+    const manualBtn = document.getElementById("manualBtn");
+
+    let lastSaveUrl = "";
+    let lastToken = "";
 
     emailBox.textContent = email || "Email tidak terbaca dari URL";
 
@@ -182,7 +130,7 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V3",
+        "MAX-USE GitHub Notifier V4",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
@@ -209,6 +157,7 @@
         let settled = false;
 
         window[cb] = (data) => {
+          if(settled) return;
           settled = true;
           cleanup();
           resolve(data);
@@ -223,7 +172,7 @@
           if(settled) return;
           settled = true;
           cleanup();
-          reject(new Error("JSONP_ERROR"));
+          reject(new Error("JSONP gagal"));
         };
 
         script.src = url + sep + "callback=" + encodeURIComponent(cb);
@@ -233,45 +182,55 @@
           if(settled) return;
           settled = true;
           cleanup();
-          reject(new Error("JSONP_TIMEOUT"));
-        }, 16000);
+          reject(new Error("JSONP timeout"));
+        }, 14000);
       });
     }
 
-    function iframeFallback(url){
-      return new Promise((resolve) => {
-        const iframe = document.createElement("iframe");
-        iframe.style.width = "1px";
-        iframe.style.height = "1px";
-        iframe.style.opacity = "0";
-        iframe.style.position = "fixed";
-        iframe.style.left = "-9999px";
-        iframe.style.top = "-9999px";
-        iframe.src = url + (url.includes("?") ? "&" : "?") + "fallback_iframe=1";
-        document.body.appendChild(iframe);
-
-        setTimeout(() => {
-          try{ iframe.remove(); }catch(e){}
-          resolve({
-            ok: true,
-            success: true,
-            fallback: true,
-            message: "Token dikirim lewat mode fallback. Cek sheet 06_FCM_TOKENS."
-          });
-        }, 3200);
+    async function sendNoCors(url){
+      await fetch(url, {
+        method: "GET",
+        mode: "no-cors",
+        cache: "no-store",
+        credentials: "omit",
+        keepalive: false
       });
+      return {
+        ok: true,
+        success: true,
+        mode: "NO_CORS_GET",
+        message: "Request dikirim dengan fetch no-cors. Cek sheet 06_FCM_TOKENS."
+      };
     }
 
     async function saveTokenToServer(token){
-      const url = buildSaveUrl(token);
+      lastSaveUrl = buildSaveUrl(token);
+      lastToken = token;
+      manualBtn.style.display = "none";
 
       try{
-        const result = await jsonp(url);
-        if(result && (result.ok || result.success)) return result;
-        throw new Error("SERVER_RESULT_NOT_OK");
-      }catch(err){
-        setStatus("Server belum mengembalikan balasan normal. Mencoba mode fallback...", "warn");
-        return await iframeFallback(url);
+        const result = await jsonp(lastSaveUrl);
+        if(result && (result.ok || result.success)){
+          result.mode = result.mode || "JSONP";
+          return result;
+        }
+        throw new Error("Balasan server tidak OK");
+      }catch(err1){
+        setStatus("Token sudah dibuat.\nJSONP belum berhasil, mencoba kirim no-cors...", "warn");
+
+        try{
+          const r2 = await sendNoCors(lastSaveUrl);
+          manualBtn.style.display = "block";
+          return r2;
+        }catch(err2){
+          manualBtn.style.display = "block";
+          return {
+            ok: false,
+            success: false,
+            mode: "FAILED",
+            message: "Token dibuat, tetapi request ke Apps Script gagal. Gunakan tombol Simpan Token Manual."
+          };
+        }
       }
     }
 
@@ -305,17 +264,12 @@
         }
 
         setStatus("Mendaftarkan service worker...", "warn");
-        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?v=3", {
-          scope: "./"
-        });
-
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4", { scope: "./" });
         await navigator.serviceWorker.ready;
 
         setStatus("Mengambil token FCM...", "warn");
 
-        if(!firebase.apps.length){
-          firebase.initializeApp(firebaseConfig);
-        }
+        if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
 
         const token = await messaging.getToken({
@@ -329,25 +283,32 @@
           return;
         }
 
-        setStatus("Menyimpan token ke MAX-USE...", "warn");
+        setStatus("Token berhasil dibuat. Menyimpan ke MAX-USE...", "warn");
 
         const result = await saveTokenToServer(token);
 
         if(result && (result.ok || result.success)){
-          const note = result.fallback
-            ? "\n\nMode fallback dipakai. Buka sheet 06_FCM_TOKENS untuk memastikan token masuk."
-            : "\n\nToken sudah dikonfirmasi oleh server.";
-
-          setStatus("✅ Notifikasi MAX-USE berhasil diproses.\n\nEmail: " + email + "\nMode: " + (result.mode || (result.fallback ? "FALLBACK" : "-")) + note, "ok");
+          setStatus(
+            "✅ Token FCM berhasil dibuat dan request simpan sudah dikirim.\n\n" +
+            "Email: " + email + "\n" +
+            "Mode: " + (result.mode || "-") + "\n\n" +
+            "Sekarang cek sheet 06_FCM_TOKENS. Jika belum muncul, klik tombol Simpan Token Manual.",
+            "ok"
+          );
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
-              body: "Perangkat ini sudah siap menerima push notification MAX-USE.",
+              body: "Token perangkat sudah dibuat. Cek 06_FCM_TOKENS untuk memastikan tersimpan.",
               tag: "MAXUSE_ACTIVE"
             });
           }catch(e){}
         }else{
-          setStatus("Token didapat, tetapi belum bisa disimpan:\n" + JSON.stringify(result || {}, null, 2), "bad");
+          setStatus(
+            "Token FCM berhasil dibuat, tetapi belum tersimpan otomatis.\n\n" +
+            "Klik tombol Simpan Token Manual di bawah.",
+            "bad"
+          );
+          manualBtn.style.display = "block";
           activateBtn.disabled = false;
         }
 
@@ -357,11 +318,16 @@
       }
     }
 
-    function backToUpdating(){
-      if(back){
-        location.href = back;
+    function openManualSave(){
+      if(!lastSaveUrl){
+        setStatus("Belum ada URL simpan. Klik aktifkan notifikasi dulu.", "bad");
         return;
       }
+      location.href = lastSaveUrl;
+    }
+
+    function backToUpdating(){
+      if(back){ location.href = back; return; }
       history.length > 1 ? history.back() : location.href = "https://max-use.framer.website/";
     }
 
