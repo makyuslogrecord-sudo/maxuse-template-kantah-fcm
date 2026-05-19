@@ -91,7 +91,7 @@
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier V7</div>
+      <div class="badge">🔔 MAX-USE FCM Notifier V8</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
       <p>
         Masukkan email petugas, lalu aktifkan/perbarui notifikasi perangkat.
@@ -101,17 +101,19 @@
       <label for="emailInput">Email petugas</label>
       <input id="emailInput" class="inputBox" type="email" placeholder="contoh: makyuslogrecord@gmail.com">
 
-      <label for="serverInput">URL Web App PAS 1.01</label>
-      <input id="serverInput" class="inputBox" type="url">
+      <input id="serverInput" type="hidden">
+      <div class="status warn" style="margin-top:8px;margin-bottom:12px;">
+        Server PAS 1.01 sudah tersambung otomatis. Tidak perlu isi URL manual.
+      </div>
 
-      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan / Perbarui Notifikasi</button>
+      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan / Perbarui Notifikasi MAX-USE</button>
       <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
       <button class="ghost" onclick="resetServiceWorkerOnly()">♻️ Reset Service Worker Saja</button>
       <button class="ghost" id="manualBtn" onclick="openManualSave()" style="display:none;">🛠️ Simpan Token Manual</button>
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
       <div class="small">
-        V7: aktivasi aman tanpa unregister otomatis. Pakai Reset hanya jika benar-benar perlu.
+        V8: URL server sudah dikunci otomatis. Setelah sukses akan kembali ke Updating.
       </div>
     </div>
   </main>
@@ -133,7 +135,7 @@
     const DEFAULT_EMAIL = "makyuslogrecord@gmail.com";
     const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec";
     const DEFAULT_BACK = "https://max-use-template-kantahv1.framer.website/updating";
-    const SW_VERSION = "v7_" + Date.now();
+    const SW_VERSION = "v8_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
@@ -144,6 +146,7 @@
 
     emailInput.value = (params.get("email") || DEFAULT_EMAIL).trim().toLowerCase();
     serverInput.value = (params.get("server") || DEFAULT_SERVER).trim();
+    if(!serverInput.value) serverInput.value = DEFAULT_SERVER;
 
     let lastSaveUrl = "";
 
@@ -158,7 +161,7 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V7",
+        "MAX-USE GitHub Notifier V8",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
@@ -362,22 +365,26 @@
 
         if(result && (result.ok || result.success)){
           setStatus(
-            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\n\n" +
-            "Email: " + currentEmail() + "\n" +
-            "Mode: " + (result.mode || "-") + "\n\n" +
-            "Sekarang hapus notif lama, lalu kirim fcm_test baru.",
+            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\\n\\n" +
+            "Email: " + currentEmail() + "\\n" +
+            "Mode: " + (result.mode || "-") + "\\n\\n" +
+            "Halaman akan kembali ke Updating dalam 3 detik.",
             "ok"
           );
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
               body: "Token dan service worker berhasil diperbarui.",
-              tag: "MAXUSE_ACTIVE_V7",
+              tag: "MAXUSE_ACTIVE_V8",
               data: { url: DEFAULT_BACK },
               silent: false,
               vibrate: [220,90,220]
             });
           }catch(e){}
+
+          setTimeout(() => {
+            location.href = DEFAULT_BACK;
+          }, 3000);
         }else{
           setStatus("Token dibuat, tetapi simpan otomatis belum OK. Klik Simpan Token Manual.", "bad");
           manualBtn.style.display = "block";
