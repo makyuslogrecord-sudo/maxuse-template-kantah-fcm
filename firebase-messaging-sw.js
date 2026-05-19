@@ -15,13 +15,14 @@ try {
   importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
 
   firebase.initializeApp({
-    apiKey: "AIzaSyBu_doZVuOjC71-PuJn4h7eC33eWsjcxuc",
-    authDomain: "max-use-template-kantah-v1.firebaseapp.com",
-    projectId: "max-use-template-kantah-v1",
-    storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
-    messagingSenderId: "961455902199",
-    appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
-  });
+    const firebaseConfig = {
+  apiKey: "AIzaSyBu_dozVu0jC71-PuJn4h7eC33eWsjcxuc",
+  authDomain: "max-use-template-kantah-v1.firebaseapp.com",
+  projectId: "max-use-template-kantah-v1",
+  storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
+  messagingSenderId: "961455902199",
+  appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
+};
 
   const messaging = firebase.messaging();
 
