@@ -163,7 +163,7 @@
     };
 
     // WAJIB DIISI: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-    const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
+    const FCM_VAPID_KEY = "ISI_VAPID_PUBLIC_KEY_DARI_FIREBASE";
 
     const params = new URLSearchParams(location.search);
     const email = (params.get("email") || "").trim().toLowerCase();
@@ -282,7 +282,7 @@
           server +
           "?action=savefcmtoken" +
           "&email=" + encodeURIComponent(email) +
-          "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || "") +
+          "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || params.get("nama") || "") +
           "&token=" + encodeURIComponent(token) +
           "&device_info=" + encodeURIComponent(deviceInfo()) +
           "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
