@@ -77,18 +77,19 @@
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier</div>
+      <div class="badge">🔔 MAX-USE FCM Notifier V5</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
-      <p>Halaman ini dipakai satu kali untuk mengaktifkan token notifikasi perangkat. Setelah aktif, notifikasi berkas masuk bisa tampil seperti notifikasi aplikasi di HP/Desktop.</p>
+      <p>Halaman ini memperbarui service worker dan mengaktifkan token notifikasi perangkat.</p>
 
       <div class="emailBox" id="emailBox">Email belum terbaca</div>
 
-      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan Notifikasi di Perangkat Ini</button>
+      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan / Perbarui Notifikasi</button>
       <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
+      <button class="ghost" onclick="resetServiceWorkerOnly()">♻️ Reset Service Worker Saja</button>
       <button class="ghost" id="manualBtn" onclick="openManualSave()" style="display:none;">🛠️ Simpan Token Manual</button>
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
-      <div class="small">Versi V4: mode simpan token memakai JSONP → fetch no-cors → manual link cadangan.</div>
+      <div class="small">V5: force update service worker agar klik notif tidak lagi membuka GitHub root 404.</div>
     </div>
   </main>
 
@@ -106,6 +107,7 @@
     };
 
     const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
+    const SW_VERSION = "v5_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const email = (params.get("email") || "").trim().toLowerCase();
@@ -118,7 +120,6 @@
     const manualBtn = document.getElementById("manualBtn");
 
     let lastSaveUrl = "";
-    let lastToken = "";
 
     emailBox.textContent = email || "Email tidak terbaca dari URL";
 
@@ -130,7 +131,7 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V4",
+        "MAX-USE GitHub Notifier V5",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
@@ -147,6 +148,37 @@
         "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
         "&browser=" + encodeURIComponent(navigator.userAgent || "") +
         "&t=" + Date.now();
+    }
+
+    async function resetServiceWorkerOnly(){
+      try{
+        if(!("serviceWorker" in navigator)){
+          setStatus("Browser belum mendukung service worker.", "bad");
+          return;
+        }
+
+        setStatus("Mereset service worker lama...", "warn");
+
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for(const reg of regs){
+          if(String(reg.scope || "").includes("/maxuse-template-kantah-fcm/")){
+            await reg.unregister();
+          }
+        }
+
+        if("caches" in window){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+
+        const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js?version=" + SW_VERSION, { scope: "./" });
+        await reg.update();
+        await navigator.serviceWorker.ready;
+
+        setStatus("✅ Service worker sudah diperbarui. Sekarang klik Aktifkan / Perbarui Notifikasi.", "ok");
+      }catch(err){
+        setStatus("Gagal reset service worker:\n" + (err && err.message ? err.message : String(err)), "bad");
+      }
     }
 
     function jsonp(url){
@@ -188,24 +220,12 @@
     }
 
     async function sendNoCors(url){
-      await fetch(url, {
-        method: "GET",
-        mode: "no-cors",
-        cache: "no-store",
-        credentials: "omit",
-        keepalive: false
-      });
-      return {
-        ok: true,
-        success: true,
-        mode: "NO_CORS_GET",
-        message: "Request dikirim dengan fetch no-cors. Cek sheet 06_FCM_TOKENS."
-      };
+      await fetch(url, { method:"GET", mode:"no-cors", cache:"no-store", credentials:"omit" });
+      return { ok:true, success:true, mode:"NO_CORS_GET", message:"Request dikirim. Cek sheet 06_FCM_TOKENS." };
     }
 
     async function saveTokenToServer(token){
       lastSaveUrl = buildSaveUrl(token);
-      lastToken = token;
       manualBtn.style.display = "none";
 
       try{
@@ -216,20 +236,13 @@
         }
         throw new Error("Balasan server tidak OK");
       }catch(err1){
-        setStatus("Token sudah dibuat.\nJSONP belum berhasil, mencoba kirim no-cors...", "warn");
-
         try{
           const r2 = await sendNoCors(lastSaveUrl);
           manualBtn.style.display = "block";
           return r2;
         }catch(err2){
           manualBtn.style.display = "block";
-          return {
-            ok: false,
-            success: false,
-            mode: "FAILED",
-            message: "Token dibuat, tetapi request ke Apps Script gagal. Gunakan tombol Simpan Token Manual."
-          };
+          return { ok:false, success:false, mode:"FAILED", message:"Gagal simpan otomatis." };
         }
       }
     }
@@ -237,7 +250,7 @@
     async function activateFCM(){
       try{
         if(!email){
-          setStatus("Email kosong. Buka halaman ini dari tombol Notifikasi di MAX-USE Updating setelah login.", "bad");
+          setStatus("Email kosong. Buka dari tombol Notifikasi di Updating setelah login.", "bad");
           return;
         }
         if(!server){
@@ -245,7 +258,7 @@
           return;
         }
         if(!("serviceWorker" in navigator)){
-          setStatus("Browser ini belum mendukung Service Worker. Coba Chrome/Edge Android atau Desktop.", "bad");
+          setStatus("Browser ini belum mendukung Service Worker.", "bad");
           return;
         }
         if(!("Notification" in window)){
@@ -254,8 +267,8 @@
         }
 
         activateBtn.disabled = true;
-        setStatus("Meminta izin notifikasi...", "warn");
 
+        setStatus("Meminta izin notifikasi...", "warn");
         const permission = await Notification.requestPermission();
         if(permission !== "granted"){
           setStatus("Izin notifikasi belum diberikan. Status: " + permission, "bad");
@@ -263,11 +276,20 @@
           return;
         }
 
-        setStatus("Mendaftarkan service worker...", "warn");
-        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4", { scope: "./" });
+        setStatus("Memperbarui service worker lama...", "warn");
+
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for(const reg of regs){
+          if(String(reg.scope || "").includes("/maxuse-template-kantah-fcm/")){
+            await reg.unregister();
+          }
+        }
+
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?version=" + SW_VERSION, { scope: "./" });
+        await registration.update();
         await navigator.serviceWorker.ready;
 
-        setStatus("Mengambil token FCM...", "warn");
+        setStatus("Mengambil token FCM baru...", "warn");
 
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
@@ -289,29 +311,25 @@
 
         if(result && (result.ok || result.success)){
           setStatus(
-            "✅ Token FCM berhasil dibuat dan request simpan sudah dikirim.\n\n" +
+            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\n\n" +
             "Email: " + email + "\n" +
             "Mode: " + (result.mode || "-") + "\n\n" +
-            "Sekarang cek sheet 06_FCM_TOKENS. Jika belum muncul, klik tombol Simpan Token Manual.",
+            "Sekarang kirim fcm_test baru dan klik notif terbaru. Harus membuka halaman Updating, bukan 404.",
             "ok"
           );
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
-              body: "Token perangkat sudah dibuat. Cek 06_FCM_TOKENS untuk memastikan tersimpan.",
-              tag: "MAXUSE_ACTIVE"
+              body: "Service worker diperbarui. Klik notif berikutnya harus membuka Updating.",
+              tag: "MAXUSE_ACTIVE_V5",
+              data: { url: "https://max-use-template-kantahv1.framer.website/updating" }
             });
           }catch(e){}
         }else{
-          setStatus(
-            "Token FCM berhasil dibuat, tetapi belum tersimpan otomatis.\n\n" +
-            "Klik tombol Simpan Token Manual di bawah.",
-            "bad"
-          );
+          setStatus("Token dibuat, tetapi simpan otomatis belum OK. Klik Simpan Token Manual.", "bad");
           manualBtn.style.display = "block";
           activateBtn.disabled = false;
         }
-
       }catch(err){
         setStatus("Gagal aktivasi FCM:\n" + (err && err.message ? err.message : String(err)), "bad");
         activateBtn.disabled = false;
@@ -328,7 +346,7 @@
 
     function backToUpdating(){
       if(back){ location.href = back; return; }
-      history.length > 1 ? history.back() : location.href = "https://max-use.framer.website/";
+      history.length > 1 ? history.back() : location.href = "https://max-use-template-kantahv1.framer.website/updating";
     }
 
     if(!email || !server){
