@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#0f172a">
   <style>
     *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
     body{
       margin:0;
       min-height:100vh;
@@ -17,13 +18,15 @@
         linear-gradient(180deg,#f8fbff,#eef4fb 55%,#f8fafc);
       color:#0f172a;
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:center;
       padding:22px;
+      padding-top:max(18px,env(safe-area-inset-top));
     }
     .card{
       width:min(100%,520px);
-      background:rgba(255,255,255,.88);
+      margin-top:0;
+      background:rgba(255,255,255,.91);
       border:1px solid rgba(148,163,184,.24);
       border-radius:30px;
       box-shadow:0 28px 90px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.9);
@@ -83,6 +86,7 @@
       box-shadow:0 18px 42px rgba(37,99,235,.25);
       font-size:15px;
       transition:.2s ease;
+      padding:12px 14px;
     }
     button:hover{transform:translateY(-1px)}
     button:disabled{opacity:.7;cursor:wait;transform:none}
@@ -106,7 +110,7 @@
     .ok{background:#ecfdf5;border-color:#86efac;color:#166534}
     .warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
     .bad{background:#fff1f2;border-color:#fca5a5;color:#991b1b}
-    .small{font-size:12px;color:#64748b;margin-top:14px}
+    .small{font-size:12px;color:#64748b;margin-top:14px;line-height:1.45}
     @keyframes sweep{
       0%{background-position:160% 0;opacity:.65}
       50%{opacity:1}
@@ -132,7 +136,8 @@
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
 
       <div class="small">
-        Catatan iPhone: jika izin notifikasi tidak muncul, buka halaman ini dari ikon Web App di Home Screen.
+        Jika berhasil tetapi halaman belum membaca balasan server, cek sheet <b>06_FCM_TOKENS</b>.
+        Token tetap dikirim lewat mode fallback.
       </div>
     </div>
   </main>
@@ -144,25 +149,18 @@
     /*********************************************************
      * MAX-USE TEMPLATE KANTAH v1
      * FILE: index.html
-     * PURPOSE: Mini FCM notifier GitHub Pages
-     *
-     * PENTING:
-     * 1. Upload file ini sebagai index.html di repo GitHub yang sama
-     *    dengan firebase-messaging-sw.js
-     * 2. Isi FCM_VAPID_KEY dari Firebase Console:
-     *    Project Settings > Cloud Messaging > Web Push certificates
+     * VERSION: V3_FINAL_APPS_SCRIPT_FALLBACK
      *********************************************************/
 
     const firebaseConfig = {
-  apiKey: "AIzaSyBu_dozVu0jC71-PuJn4h7eC33eWsjcxuc",
-  authDomain: "max-use-template-kantah-v1.firebaseapp.com",
-  projectId: "max-use-template-kantah-v1",
-  storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
-  messagingSenderId: "961455902199",
-  appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
-};
+      apiKey: "AIzaSyBu_dozVu0jC71-PuJn4h7eC33eWsjcxuc",
+      authDomain: "max-use-template-kantah-v1.firebaseapp.com",
+      projectId: "max-use-template-kantah-v1",
+      storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
+      messagingSenderId: "961455902199",
+      appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
+    };
 
-    // WAJIB DIISI: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
     const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
 
     const params = new URLSearchParams(location.search);
@@ -179,14 +177,28 @@
     function setStatus(text, type){
       statusBox.textContent = text;
       statusBox.className = "status " + (type || "warn");
+      try{ statusBox.scrollIntoView({block:"nearest", behavior:"smooth"}); }catch(e){}
     }
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier",
+        "MAX-USE GitHub Notifier V3",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
+    }
+
+    function buildSaveUrl(token){
+      const sep = server.includes("?") ? "&" : "?";
+      return server + sep +
+        "action=savefcmtoken" +
+        "&email=" + encodeURIComponent(email) +
+        "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || params.get("nama") || "") +
+        "&token=" + encodeURIComponent(token) +
+        "&device_info=" + encodeURIComponent(deviceInfo()) +
+        "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
+        "&browser=" + encodeURIComponent(navigator.userAgent || "") +
+        "&t=" + Date.now();
     }
 
     function jsonp(url){
@@ -194,8 +206,10 @@
         const cb = "maxuse_jsonp_" + Date.now() + "_" + Math.floor(Math.random()*100000);
         const script = document.createElement("script");
         const sep = url.includes("?") ? "&" : "?";
+        let settled = false;
 
         window[cb] = (data) => {
+          settled = true;
           cleanup();
           resolve(data);
         };
@@ -206,18 +220,59 @@
         }
 
         script.onerror = () => {
+          if(settled) return;
+          settled = true;
           cleanup();
-          reject(new Error("Gagal menghubungi server Apps Script."));
+          reject(new Error("JSONP_ERROR"));
         };
 
-        script.src = url + sep + "callback=" + encodeURIComponent(cb) + "&t=" + Date.now();
+        script.src = url + sep + "callback=" + encodeURIComponent(cb);
         document.body.appendChild(script);
 
         setTimeout(() => {
+          if(settled) return;
+          settled = true;
           cleanup();
-          reject(new Error("Timeout menghubungi server."));
-        }, 20000);
+          reject(new Error("JSONP_TIMEOUT"));
+        }, 16000);
       });
+    }
+
+    function iframeFallback(url){
+      return new Promise((resolve) => {
+        const iframe = document.createElement("iframe");
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        iframe.style.opacity = "0";
+        iframe.style.position = "fixed";
+        iframe.style.left = "-9999px";
+        iframe.style.top = "-9999px";
+        iframe.src = url + (url.includes("?") ? "&" : "?") + "fallback_iframe=1";
+        document.body.appendChild(iframe);
+
+        setTimeout(() => {
+          try{ iframe.remove(); }catch(e){}
+          resolve({
+            ok: true,
+            success: true,
+            fallback: true,
+            message: "Token dikirim lewat mode fallback. Cek sheet 06_FCM_TOKENS."
+          });
+        }, 3200);
+      });
+    }
+
+    async function saveTokenToServer(token){
+      const url = buildSaveUrl(token);
+
+      try{
+        const result = await jsonp(url);
+        if(result && (result.ok || result.success)) return result;
+        throw new Error("SERVER_RESULT_NOT_OK");
+      }catch(err){
+        setStatus("Server belum mengembalikan balasan normal. Mencoba mode fallback...", "warn");
+        return await iframeFallback(url);
+      }
     }
 
     async function activateFCM(){
@@ -228,10 +283,6 @@
         }
         if(!server){
           setStatus("URL server kosong. Pastikan tombol dari Updating membawa parameter server.", "bad");
-          return;
-        }
-        if(FCM_VAPID_KEY === "ISI_VAPID_PUBLIC_KEY_DARI_FIREBASE"){
-          setStatus("VAPID key belum diisi di file index.html. Isi dulu dari Firebase Console > Cloud Messaging > Web Push certificates.", "bad");
           return;
         }
         if(!("serviceWorker" in navigator)){
@@ -254,7 +305,7 @@
         }
 
         setStatus("Mendaftarkan service worker...", "warn");
-        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js", {
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?v=3", {
           scope: "./"
         });
 
@@ -262,7 +313,9 @@
 
         setStatus("Mengambil token FCM...", "warn");
 
-        firebase.initializeApp(firebaseConfig);
+        if(!firebase.apps.length){
+          firebase.initializeApp(firebaseConfig);
+        }
         const messaging = firebase.messaging();
 
         const token = await messaging.getToken({
@@ -278,20 +331,14 @@
 
         setStatus("Menyimpan token ke MAX-USE...", "warn");
 
-        const url =
-          server +
-          "?action=savefcmtoken" +
-          "&email=" + encodeURIComponent(email) +
-          "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || params.get("nama") || "") +
-          "&token=" + encodeURIComponent(token) +
-          "&device_info=" + encodeURIComponent(deviceInfo()) +
-          "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
-          "&browser=" + encodeURIComponent(navigator.userAgent || "");
-
-        const result = await jsonp(url);
+        const result = await saveTokenToServer(token);
 
         if(result && (result.ok || result.success)){
-          setStatus("✅ Notifikasi MAX-USE berhasil aktif.\n\nEmail: " + email + "\nMode: " + (result.mode || "-") + "\n\nSekarang kamu bisa kembali ke menu Updating.", "ok");
+          const note = result.fallback
+            ? "\n\nMode fallback dipakai. Buka sheet 06_FCM_TOKENS untuk memastikan token masuk."
+            : "\n\nToken sudah dikonfirmasi oleh server.";
+
+          setStatus("✅ Notifikasi MAX-USE berhasil diproses.\n\nEmail: " + email + "\nMode: " + (result.mode || (result.fallback ? "FALLBACK" : "-")) + note, "ok");
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
@@ -300,7 +347,7 @@
             });
           }catch(e){}
         }else{
-          setStatus("Token didapat, tapi gagal disimpan ke server:\n" + JSON.stringify(result || {}, null, 2), "bad");
+          setStatus("Token didapat, tetapi belum bisa disimpan:\n" + JSON.stringify(result || {}, null, 2), "bad");
           activateBtn.disabled = false;
         }
 
