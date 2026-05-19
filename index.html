@@ -77,6 +77,18 @@
     button:disabled{opacity:.7;cursor:wait;transform:none}
     .secondary{margin-top:10px;background:linear-gradient(135deg,#0f172a,#1e293b);box-shadow:0 14px 34px rgba(15,23,42,.22)}
     .ghost{margin-top:10px;background:linear-gradient(135deg,#64748b,#334155);box-shadow:0 12px 28px rgba(51,65,85,.18)}
+    .serverNote{
+      margin:10px 0 14px;
+      padding:14px;
+      border-radius:20px;
+      background:#fff7ed;
+      border:1px solid #fdba74;
+      color:#9a3412;
+      font-size:13px;
+      line-height:1.45;
+      text-align:center;
+      font-weight:700;
+    }
     .status{
       margin-top:16px;padding:14px;border-radius:20px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;
       font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;
@@ -91,29 +103,27 @@
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier V8</div>
+      <div class="badge">🔔 MAX-USE FCM Notifier V9</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
       <p>
         Masukkan email petugas, lalu aktifkan/perbarui notifikasi perangkat.
-        Halaman ini juga bisa dibuka langsung tanpa harus dari Framer.
+        Halaman ini bisa dibuka langsung tanpa harus dari Framer.
       </p>
 
       <label for="emailInput">Email petugas</label>
       <input id="emailInput" class="inputBox" type="email" placeholder="contoh: makyuslogrecord@gmail.com">
 
       <input id="serverInput" type="hidden">
-      <div class="status warn" style="margin-top:8px;margin-bottom:12px;">
-        Server PAS 1.01 sudah tersambung otomatis. Tidak perlu isi URL manual.
-      </div>
+      <div class="serverNote">Server PAS 1.01 sudah tersambung otomatis. Tidak perlu isi URL manual.</div>
 
-      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan / Perbarui Notifikasi MAX-USE</button>
-      <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
-      <button class="ghost" onclick="resetServiceWorkerOnly()">♻️ Reset Service Worker Saja</button>
-      <button class="ghost" id="manualBtn" onclick="openManualSave()" style="display:none;">🛠️ Simpan Token Manual</button>
+      <button id="activateBtn" type="button">🔔 Aktifkan / Perbarui Notifikasi MAX-USE</button>
+      <button id="backBtn" type="button" class="secondary">↩️ Kembali ke Updating</button>
+      <button id="resetBtn" type="button" class="ghost">♻️ Reset Service Worker Saja</button>
+      <button id="manualBtn" type="button" class="ghost" style="display:none;">🛠️ Simpan Token Manual</button>
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
       <div class="small">
-        V8: URL server sudah dikunci otomatis. Setelah sukses akan kembali ke Updating.
+        V9 memperbaiki tombol yang sebelumnya tidak bereaksi karena error JavaScript di V8.
       </div>
     </div>
   </main>
@@ -135,23 +145,33 @@
     const DEFAULT_EMAIL = "makyuslogrecord@gmail.com";
     const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec";
     const DEFAULT_BACK = "https://max-use-template-kantahv1.framer.website/updating";
-    const SW_VERSION = "v8_" + Date.now();
+    const SW_VERSION = "v9_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
     const serverInput = document.getElementById("serverInput");
     const statusBox = document.getElementById("statusBox");
     const activateBtn = document.getElementById("activateBtn");
+    const backBtn = document.getElementById("backBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const manualBtn = document.getElementById("manualBtn");
-
-    emailInput.value = (params.get("email") || DEFAULT_EMAIL).trim().toLowerCase();
-    serverInput.value = (params.get("server") || DEFAULT_SERVER).trim();
-    if(!serverInput.value) serverInput.value = DEFAULT_SERVER;
 
     let lastSaveUrl = "";
 
+    emailInput.value = (params.get("email") || DEFAULT_EMAIL).trim().toLowerCase();
+    serverInput.value = (params.get("server") || DEFAULT_SERVER).trim() || DEFAULT_SERVER;
+
+    window.addEventListener("error", function(event){
+      setStatus("Error halaman notifier:\\n" + (event.message || "Unknown error"), "bad");
+    });
+
+    activateBtn.addEventListener("click", activateFCM);
+    backBtn.addEventListener("click", backToUpdating);
+    resetBtn.addEventListener("click", resetServiceWorkerOnly);
+    manualBtn.addEventListener("click", openManualSave);
+
     function currentEmail(){ return String(emailInput.value || "").trim().toLowerCase(); }
-    function currentServer(){ return String(serverInput.value || "").trim(); }
+    function currentServer(){ return String(serverInput.value || DEFAULT_SERVER).trim(); }
 
     function setStatus(text, type){
       statusBox.textContent = text;
@@ -161,7 +181,7 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V8",
+        "MAX-USE GitHub Notifier V9",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
@@ -188,13 +208,14 @@
           return;
         }
 
-        const yakin = confirm(
-          "Reset Service Worker hanya dipakai jika notifikasi masih 404/gagal.
+        const lanjut = confirm([
+          "Reset Service Worker hanya dipakai jika notifikasi masih 404/gagal.",
+          "",
+          "Setelah reset, halaman akan dimuat ulang.",
+          "Lanjut?"
+        ].join("\\n"));
 
-" +
-          "Setelah reset, halaman akan dimuat ulang. Lanjut?"
-        );
-        if(!yakin) return;
+        if(!lanjut) return;
 
         setStatus("Mereset service worker dan cache lama...", "warn");
 
@@ -211,11 +232,13 @@
         }
 
         setStatus("✅ Reset selesai. Halaman akan dimuat ulang. Setelah terbuka lagi, klik Aktifkan / Perbarui Notifikasi.", "ok");
-        setTimeout(() => {
-          location.href = location.pathname + "?email=" + encodeURIComponent(currentEmail()) + "&server=" + encodeURIComponent(currentServer()) + "&t=" + Date.now();
+
+        setTimeout(function(){
+          location.href = location.pathname + "?email=" + encodeURIComponent(currentEmail()) + "&t=9r";
         }, 1200);
+
       }catch(err){
-        setStatus("Gagal reset service worker:\n" + (err && err.message ? err.message : String(err)), "bad");
+        setStatus("Gagal reset service worker:\\n" + (err && err.message ? err.message : String(err)), "bad");
       }
     }
 
@@ -287,6 +310,8 @@
 
     async function activateFCM(){
       try{
+        setStatus("Mulai aktivasi notifikasi...", "warn");
+
         if(!currentEmail()){
           setStatus("Email kosong. Isi email petugas dulu.", "bad");
           return;
@@ -316,8 +341,6 @@
 
         setStatus("Mendaftarkan / memperbarui service worker...", "warn");
 
-        // V7: jangan unregister otomatis saat aktivasi.
-        // Unregister berulang di Chrome Android dapat memicu Registration failed - push service error.
         const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?version=" + SW_VERSION, { scope: "./" });
         try{ await registration.update(); }catch(e){}
         await navigator.serviceWorker.ready;
@@ -336,17 +359,16 @@
         }catch(tokenErr){
           const msg = tokenErr && tokenErr.message ? tokenErr.message : String(tokenErr);
           if(msg.toLowerCase().includes("push service error")){
-            setStatus(
-              "Gagal aktivasi FCM: Registration failed - push service error.\n\n" +
-              "Ini biasanya karena Chrome Android masih menyimpan push subscription lama setelah reset.\n\n" +
-              "Solusi cepat:\n" +
-              "1. Tutup semua tab GitHub MAX-USE.\n" +
-              "2. Buka Setelan Chrome > Site settings > All sites.\n" +
-              "3. Cari makyuslogrecord-sudo.github.io.\n" +
-              "4. Clear & reset / Hapus data situs.\n" +
-              "5. Buka lagi halaman notifier dan aktifkan ulang.",
-              "bad"
-            );
+            setStatus([
+              "Gagal aktivasi FCM: Registration failed - push service error.",
+              "",
+              "Solusi cepat:",
+              "1. Tutup semua tab GitHub MAX-USE.",
+              "2. Chrome > Settings > Site settings > All sites.",
+              "3. Cari makyuslogrecord-sudo.github.io.",
+              "4. Clear & reset / Hapus data situs.",
+              "5. Buka lagi halaman notifier dan aktifkan ulang."
+            ].join("\\n"), "bad");
             activateBtn.disabled = false;
             return;
           }
@@ -364,25 +386,26 @@
         const result = await saveTokenToServer(token);
 
         if(result && (result.ok || result.success)){
-          setStatus(
-            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\\n\\n" +
-            "Email: " + currentEmail() + "\\n" +
-            "Mode: " + (result.mode || "-") + "\\n\\n" +
-            "Halaman akan kembali ke Updating dalam 3 detik.",
-            "ok"
-          );
+          setStatus([
+            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.",
+            "",
+            "Email: " + currentEmail(),
+            "Mode: " + (result.mode || "-"),
+            "",
+            "Halaman akan kembali ke Updating dalam 3 detik."
+          ].join("\\n"), "ok");
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
               body: "Token dan service worker berhasil diperbarui.",
-              tag: "MAXUSE_ACTIVE_V8",
+              tag: "MAXUSE_ACTIVE_V9",
               data: { url: DEFAULT_BACK },
               silent: false,
               vibrate: [220,90,220]
             });
           }catch(e){}
 
-          setTimeout(() => {
+          setTimeout(function(){
             location.href = DEFAULT_BACK;
           }, 3000);
         }else{
@@ -390,8 +413,9 @@
           manualBtn.style.display = "block";
           activateBtn.disabled = false;
         }
+
       }catch(err){
-        setStatus("Gagal aktivasi FCM:\n" + (err && err.message ? err.message : String(err)), "bad");
+        setStatus("Gagal aktivasi FCM:\\n" + (err && err.message ? err.message : String(err)), "bad");
         activateBtn.disabled = false;
       }
     }
@@ -405,8 +429,7 @@
     }
 
     function backToUpdating(){
-      const back = (params.get("back") || DEFAULT_BACK).trim();
-      location.href = back || DEFAULT_BACK;
+      location.href = DEFAULT_BACK;
     }
   </script>
 </body>
