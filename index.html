@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>MAX-USE FCM Notifier</title>
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Arial,system-ui,sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%,rgba(56,189,248,.18),transparent 32%),
+        radial-gradient(circle at 85% 5%,rgba(139,92,246,.15),transparent 30%),
+        linear-gradient(180deg,#f8fbff,#eef4fb 55%,#f8fafc);
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .card{
+      width:min(100%,520px);
+      background:rgba(255,255,255,.88);
+      border:1px solid rgba(148,163,184,.24);
+      border-radius:30px;
+      box-shadow:0 28px 90px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.9);
+      overflow:hidden;
+      position:relative;
+    }
+    .card:before{
+      content:"";
+      position:absolute;
+      left:20px; right:20px; top:0;
+      height:5px;
+      border-radius:999px;
+      background:linear-gradient(90deg,transparent,#38bdf8,#8b5cf6,#22c55e,transparent);
+      background-size:220% 100%;
+      animation:sweep 1.2s ease-in-out infinite;
+    }
+    .inner{padding:28px 24px 22px}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      background:#eef6ff;
+      border:1px solid #bfdbfe;
+      color:#1e40af;
+      font-size:12px;
+      font-weight:900;
+      margin-bottom:15px;
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:28px;
+      line-height:1.08;
+      letter-spacing:-.04em;
+    }
+    p{margin:0 0 16px;color:#475569;line-height:1.55;font-size:14px}
+    .emailBox{
+      padding:13px 14px;
+      border-radius:18px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      font-size:14px;
+      font-weight:800;
+      word-break:break-word;
+      margin:12px 0 16px;
+    }
+    button{
+      width:100%;
+      min-height:52px;
+      border:0;
+      border-radius:20px;
+      cursor:pointer;
+      font-weight:950;
+      color:#fff;
+      background:linear-gradient(135deg,#2563eb,#06b6d4 52%,#22c55e);
+      box-shadow:0 18px 42px rgba(37,99,235,.25);
+      font-size:15px;
+      transition:.2s ease;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:disabled{opacity:.7;cursor:wait;transform:none}
+    .secondary{
+      margin-top:10px;
+      background:linear-gradient(135deg,#0f172a,#1e293b);
+      box-shadow:0 14px 34px rgba(15,23,42,.22);
+    }
+    .status{
+      margin-top:16px;
+      padding:14px;
+      border-radius:20px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      color:#334155;
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .ok{background:#ecfdf5;border-color:#86efac;color:#166534}
+    .warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+    .bad{background:#fff1f2;border-color:#fca5a5;color:#991b1b}
+    .small{font-size:12px;color:#64748b;margin-top:14px}
+    @keyframes sweep{
+      0%{background-position:160% 0;opacity:.65}
+      50%{opacity:1}
+      100%{background-position:-60% 0;opacity:.75}
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="inner">
+      <div class="badge">🔔 MAX-USE FCM Notifier</div>
+      <h1>Aktifkan Notifikasi MAX-USE</h1>
+      <p>
+        Halaman ini dipakai satu kali untuk mengaktifkan token notifikasi perangkat.
+        Setelah aktif, notifikasi berkas masuk bisa tampil seperti notifikasi aplikasi di HP/Desktop.
+      </p>
+
+      <div class="emailBox" id="emailBox">Email belum terbaca</div>
+
+      <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan Notifikasi di Perangkat Ini</button>
+      <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
+
+      <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
+
+      <div class="small">
+        Catatan iPhone: jika izin notifikasi tidak muncul, buka halaman ini dari ikon Web App di Home Screen.
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+
+  <script>
+    /*********************************************************
+     * MAX-USE TEMPLATE KANTAH v1
+     * FILE: index.html
+     * PURPOSE: Mini FCM notifier GitHub Pages
+     *
+     * PENTING:
+     * 1. Upload file ini sebagai index.html di repo GitHub yang sama
+     *    dengan firebase-messaging-sw.js
+     * 2. Isi FCM_VAPID_KEY dari Firebase Console:
+     *    Project Settings > Cloud Messaging > Web Push certificates
+     *********************************************************/
+
+    const firebaseConfig = {
+      apiKey: "ATzaSyBu_doZVuOjC71-PuJn4h7eC33eWsjcxuc",
+      authDomain: "max-use-template-kantah-v1.firebaseapp.com",
+      projectId: "max-use-template-kantah-v1",
+      storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
+      messagingSenderId: "961455902199",
+      appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
+    };
+
+    // WAJIB DIISI: Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+    const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
+
+    const params = new URLSearchParams(location.search);
+    const email = (params.get("email") || "").trim().toLowerCase();
+    const server = (params.get("server") || "").trim();
+    const back = (params.get("back") || "").trim();
+
+    const emailBox = document.getElementById("emailBox");
+    const statusBox = document.getElementById("statusBox");
+    const activateBtn = document.getElementById("activateBtn");
+
+    emailBox.textContent = email || "Email tidak terbaca dari URL";
+
+    function setStatus(text, type){
+      statusBox.textContent = text;
+      statusBox.className = "status " + (type || "warn");
+    }
+
+    function deviceInfo(){
+      return [
+        "MAX-USE GitHub Notifier",
+        navigator.userAgent || "",
+        "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
+      ].join(" | ").slice(0, 900);
+    }
+
+    function jsonp(url){
+      return new Promise((resolve, reject) => {
+        const cb = "maxuse_jsonp_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+        const script = document.createElement("script");
+        const sep = url.includes("?") ? "&" : "?";
+
+        window[cb] = (data) => {
+          cleanup();
+          resolve(data);
+        };
+
+        function cleanup(){
+          try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+          try{ script.remove(); }catch(e){}
+        }
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Gagal menghubungi server Apps Script."));
+        };
+
+        script.src = url + sep + "callback=" + encodeURIComponent(cb) + "&t=" + Date.now();
+        document.body.appendChild(script);
+
+        setTimeout(() => {
+          cleanup();
+          reject(new Error("Timeout menghubungi server."));
+        }, 20000);
+      });
+    }
+
+    async function activateFCM(){
+      try{
+        if(!email){
+          setStatus("Email kosong. Buka halaman ini dari tombol Notifikasi di MAX-USE Updating setelah login.", "bad");
+          return;
+        }
+        if(!server){
+          setStatus("URL server kosong. Pastikan tombol dari Updating membawa parameter server.", "bad");
+          return;
+        }
+        if(FCM_VAPID_KEY === "ISI_VAPID_PUBLIC_KEY_DARI_FIREBASE"){
+          setStatus("VAPID key belum diisi di file index.html. Isi dulu dari Firebase Console > Cloud Messaging > Web Push certificates.", "bad");
+          return;
+        }
+        if(!("serviceWorker" in navigator)){
+          setStatus("Browser ini belum mendukung Service Worker. Coba Chrome/Edge Android atau Desktop.", "bad");
+          return;
+        }
+        if(!("Notification" in window)){
+          setStatus("Browser ini belum mendukung Notification API.", "bad");
+          return;
+        }
+
+        activateBtn.disabled = true;
+        setStatus("Meminta izin notifikasi...", "warn");
+
+        const permission = await Notification.requestPermission();
+        if(permission !== "granted"){
+          setStatus("Izin notifikasi belum diberikan. Status: " + permission, "bad");
+          activateBtn.disabled = false;
+          return;
+        }
+
+        setStatus("Mendaftarkan service worker...", "warn");
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js", {
+          scope: "./"
+        });
+
+        await navigator.serviceWorker.ready;
+
+        setStatus("Mengambil token FCM...", "warn");
+
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        const token = await messaging.getToken({
+          vapidKey: FCM_VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+
+        if(!token){
+          setStatus("Token kosong. Coba refresh halaman lalu aktifkan ulang.", "bad");
+          activateBtn.disabled = false;
+          return;
+        }
+
+        setStatus("Menyimpan token ke MAX-USE...", "warn");
+
+        const url =
+          server +
+          "?action=savefcmtoken" +
+          "&email=" + encodeURIComponent(email) +
+          "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || "") +
+          "&token=" + encodeURIComponent(token) +
+          "&device_info=" + encodeURIComponent(deviceInfo()) +
+          "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
+          "&browser=" + encodeURIComponent(navigator.userAgent || "");
+
+        const result = await jsonp(url);
+
+        if(result && (result.ok || result.success)){
+          setStatus("✅ Notifikasi MAX-USE berhasil aktif.\n\nEmail: " + email + "\nMode: " + (result.mode || "-") + "\n\nSekarang kamu bisa kembali ke menu Updating.", "ok");
+
+          try{
+            new Notification("MAX-USE Notifikasi Aktif", {
+              body: "Perangkat ini sudah siap menerima push notification MAX-USE.",
+              tag: "MAXUSE_ACTIVE"
+            });
+          }catch(e){}
+        }else{
+          setStatus("Token didapat, tapi gagal disimpan ke server:\n" + JSON.stringify(result || {}, null, 2), "bad");
+          activateBtn.disabled = false;
+        }
+
+      }catch(err){
+        setStatus("Gagal aktivasi FCM:\n" + (err && err.message ? err.message : String(err)), "bad");
+        activateBtn.disabled = false;
+      }
+    }
+
+    function backToUpdating(){
+      if(back){
+        location.href = back;
+        return;
+      }
+      history.length > 1 ? history.back() : location.href = "https://max-use.framer.website/";
+    }
+
+    if(!email || !server){
+      setStatus("Parameter belum lengkap. Buka halaman ini dari tombol Notifikasi di menu Updating setelah login.", "warn");
+    }
+  </script>
+</body>
+</html>
