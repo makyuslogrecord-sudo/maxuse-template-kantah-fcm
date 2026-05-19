@@ -50,10 +50,24 @@
     }
     h1{margin:0 0 8px;font-size:28px;line-height:1.08;letter-spacing:-.04em}
     p{margin:0 0 16px;color:#475569;line-height:1.55;font-size:14px}
-    .emailBox{
-      padding:13px 14px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0;
-      font-size:14px;font-weight:800;word-break:break-word;margin:12px 0 16px;
+    .inputBox{
+      width:100%;
+      padding:13px 14px;
+      border-radius:18px;
+      background:#f8fafc;
+      border:1px solid #dbe3ef;
+      color:#0f172a;
+      font-size:14px;
+      font-weight:800;
+      outline:none;
+      margin:8px 0 12px;
     }
+    .inputBox:focus{
+      border-color:#38bdf8;
+      box-shadow:0 0 0 4px rgba(56,189,248,.14);
+      background:#fff;
+    }
+    label{display:block;font-size:12px;font-weight:900;color:#475569;margin-top:8px}
     button{
       width:100%;min-height:52px;border:0;border-radius:20px;cursor:pointer;font-weight:950;color:#fff;
       background:linear-gradient(135deg,#2563eb,#06b6d4 52%,#22c55e);
@@ -77,11 +91,18 @@
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier V5</div>
+      <div class="badge">🔔 MAX-USE FCM Notifier V6</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
-      <p>Halaman ini memperbarui service worker dan mengaktifkan token notifikasi perangkat.</p>
+      <p>
+        Masukkan email petugas, lalu aktifkan/perbarui notifikasi perangkat.
+        Halaman ini juga bisa dibuka langsung tanpa harus dari Framer.
+      </p>
 
-      <div class="emailBox" id="emailBox">Email belum terbaca</div>
+      <label for="emailInput">Email petugas</label>
+      <input id="emailInput" class="inputBox" type="email" placeholder="contoh: makyuslogrecord@gmail.com">
+
+      <label for="serverInput">URL Web App PAS 1.01</label>
+      <input id="serverInput" class="inputBox" type="url">
 
       <button id="activateBtn" onclick="activateFCM()">🔔 Aktifkan / Perbarui Notifikasi</button>
       <button class="secondary" onclick="backToUpdating()">↩️ Kembali ke Updating</button>
@@ -89,7 +110,9 @@
       <button class="ghost" id="manualBtn" onclick="openManualSave()" style="display:none;">🛠️ Simpan Token Manual</button>
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
-      <div class="small">V5: force update service worker agar klik notif tidak lagi membuka GitHub root 404.</div>
+      <div class="small">
+        V6: sudah ada input email manual + default server. Untuk replikasi Kantah lain, cukup ganti config Firebase, VAPID, dan URL server.
+      </div>
     </div>
   </main>
 
@@ -107,21 +130,25 @@
     };
 
     const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
-    const SW_VERSION = "v5_" + Date.now();
+    const DEFAULT_EMAIL = "makyuslogrecord@gmail.com";
+    const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec";
+    const DEFAULT_BACK = "https://max-use-template-kantahv1.framer.website/updating";
+    const SW_VERSION = "v6_" + Date.now();
 
     const params = new URLSearchParams(location.search);
-    const email = (params.get("email") || "").trim().toLowerCase();
-    const server = (params.get("server") || "").trim();
-    const back = (params.get("back") || "").trim();
-
-    const emailBox = document.getElementById("emailBox");
+    const emailInput = document.getElementById("emailInput");
+    const serverInput = document.getElementById("serverInput");
     const statusBox = document.getElementById("statusBox");
     const activateBtn = document.getElementById("activateBtn");
     const manualBtn = document.getElementById("manualBtn");
 
+    emailInput.value = (params.get("email") || DEFAULT_EMAIL).trim().toLowerCase();
+    serverInput.value = (params.get("server") || DEFAULT_SERVER).trim();
+
     let lastSaveUrl = "";
 
-    emailBox.textContent = email || "Email tidak terbaca dari URL";
+    function currentEmail(){ return String(emailInput.value || "").trim().toLowerCase(); }
+    function currentServer(){ return String(serverInput.value || "").trim(); }
 
     function setStatus(text, type){
       statusBox.textContent = text;
@@ -131,17 +158,18 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V5",
+        "MAX-USE GitHub Notifier V6",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
     }
 
     function buildSaveUrl(token){
+      const server = currentServer();
       const sep = server.includes("?") ? "&" : "?";
       return server + sep +
         "action=savefcmtoken" +
-        "&email=" + encodeURIComponent(email) +
+        "&email=" + encodeURIComponent(currentEmail()) +
         "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || params.get("nama") || "") +
         "&token=" + encodeURIComponent(token) +
         "&device_info=" + encodeURIComponent(deviceInfo()) +
@@ -177,7 +205,7 @@
 
         setStatus("✅ Service worker sudah diperbarui. Sekarang klik Aktifkan / Perbarui Notifikasi.", "ok");
       }catch(err){
-        setStatus("Gagal reset service worker:\n" + (err && err.message ? err.message : String(err)), "bad");
+        setStatus("Gagal reset service worker:\\n" + (err && err.message ? err.message : String(err)), "bad");
       }
     }
 
@@ -249,12 +277,12 @@
 
     async function activateFCM(){
       try{
-        if(!email){
-          setStatus("Email kosong. Buka dari tombol Notifikasi di Updating setelah login.", "bad");
+        if(!currentEmail()){
+          setStatus("Email kosong. Isi email petugas dulu.", "bad");
           return;
         }
-        if(!server){
-          setStatus("URL server kosong. Pastikan tombol dari Updating membawa parameter server.", "bad");
+        if(!currentServer()){
+          setStatus("URL server kosong.", "bad");
           return;
         }
         if(!("serviceWorker" in navigator)){
@@ -311,18 +339,18 @@
 
         if(result && (result.ok || result.success)){
           setStatus(
-            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\n\n" +
-            "Email: " + email + "\n" +
-            "Mode: " + (result.mode || "-") + "\n\n" +
-            "Sekarang kirim fcm_test baru dan klik notif terbaru. Harus membuka halaman Updating, bukan 404.",
+            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.\\n\\n" +
+            "Email: " + currentEmail() + "\\n" +
+            "Mode: " + (result.mode || "-") + "\\n\\n" +
+            "Sekarang kirim fcm_test baru dan klik notif terbaru.",
             "ok"
           );
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
               body: "Service worker diperbarui. Klik notif berikutnya harus membuka Updating.",
-              tag: "MAXUSE_ACTIVE_V5",
-              data: { url: "https://max-use-template-kantahv1.framer.website/updating" }
+              tag: "MAXUSE_ACTIVE_V6",
+              data: { url: DEFAULT_BACK }
             });
           }catch(e){}
         }else{
@@ -331,7 +359,7 @@
           activateBtn.disabled = false;
         }
       }catch(err){
-        setStatus("Gagal aktivasi FCM:\n" + (err && err.message ? err.message : String(err)), "bad");
+        setStatus("Gagal aktivasi FCM:\\n" + (err && err.message ? err.message : String(err)), "bad");
         activateBtn.disabled = false;
       }
     }
@@ -345,12 +373,8 @@
     }
 
     function backToUpdating(){
-      if(back){ location.href = back; return; }
-      history.length > 1 ? history.back() : location.href = "https://max-use-template-kantahv1.framer.website/updating";
-    }
-
-    if(!email || !server){
-      setStatus("Parameter belum lengkap. Buka halaman ini dari tombol Notifikasi di menu Updating setelah login.", "warn");
+      const back = (params.get("back") || DEFAULT_BACK).trim();
+      location.href = back || DEFAULT_BACK;
     }
   </script>
 </body>
