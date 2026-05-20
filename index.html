@@ -103,7 +103,7 @@
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier V9</div>
+      <div class="badge">🔔 MAX-USE FCM Notifier V10</div>
       <h1>Aktifkan Notifikasi MAX-USE</h1>
       <p>
         Masukkan email petugas, lalu aktifkan/perbarui notifikasi perangkat.
@@ -123,7 +123,7 @@
 
       <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
       <div class="small">
-        V9 memperbaiki tombol yang sebelumnya tidak bereaksi karena error JavaScript di V8.
+        V10 memakai service worker RAW PUSH FINAL agar notif tidak lagi generik.
       </div>
     </div>
   </main>
@@ -145,7 +145,7 @@
     const DEFAULT_EMAIL = "makyuslogrecord@gmail.com";
     const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec";
     const DEFAULT_BACK = "https://max-use-template-kantahv1.framer.website/updating";
-    const SW_VERSION = "v9_" + Date.now();
+    const SW_VERSION = "v10_raw_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
@@ -181,7 +181,7 @@
 
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V9",
+        "MAX-USE GitHub Notifier V10",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
       ].join(" | ").slice(0, 900);
@@ -397,8 +397,8 @@
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
-              body: "Token dan service worker berhasil diperbarui.",
-              tag: "MAXUSE_ACTIVE_V9",
+              body: "Token diperbarui dengan RAW PUSH final. Test notifikasi terbaru.",
+              tag: "MAXUSE_ACTIVE_V10",
               data: { url: DEFAULT_BACK },
               silent: false,
               vibrate: [220,90,220]
