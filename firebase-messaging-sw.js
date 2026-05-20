@@ -1,14 +1,15 @@
 /* ==========================================================
    MAX-USE TEMPLATE KANTAH v1
    FILE: firebase-messaging-sw.js
-   VERSION: V5_DATA_MESSAGE_RICH_NOTIF
-   PURPOSE: Firebase Cloud Messaging Service Worker
+   VERSION: V6_RAW_PUSH_FINAL
+   PURPOSE: Service Worker Web Push MAX-USE
 
-   FIX:
-   - Data-message only: tampilkan title/body dari data FCM.
-   - Hindari notifikasi Chrome generik “Situs ini diperbarui di latar belakang”.
-   - Klik notif selalu diarahkan ke halaman Updating jika URL kosong/root.
-   - Minta getar dan non-silent. Bunyi tetap bergantung setting Chrome/Android.
+   Kenapa V6:
+   - Tidak memakai firebase-messaging-compat di service worker.
+   - Menangkap event push langsung dengan self.addEventListener("push").
+   - Mencegah notifikasi generik Chrome:
+     "Situs ini diperbarui di latar belakang".
+   - Semua klik notif diarahkan ke halaman Updating Framer.
 ========================================================== */
 
 const MAXUSE_DEFAULT_OPEN_URL = "https://max-use-template-kantahv1.framer.website/updating";
@@ -34,6 +35,25 @@ function MAXUSE_SW_normalizeOpenUrl(rawUrl) {
   return MAXUSE_DEFAULT_OPEN_URL;
 }
 
+function MAXUSE_SW_readPayload(event) {
+  try {
+    if (!event.data) return {};
+    return event.data.json() || {};
+  } catch (err) {
+    try {
+      return { data: { body: event.data ? event.data.text() : "" } };
+    } catch (e) {
+      return {};
+    }
+  }
+}
+
+function MAXUSE_SW_pickData(payload) {
+  // FCM data message biasanya masuk di payload.data.
+  // Fallback dibuat agar tetap aman jika bentuk payload berbeda.
+  return payload && payload.data ? payload.data : (payload || {});
+}
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -42,55 +62,64 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-try {
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+self.addEventListener("push", (event) => {
+  const payload = MAXUSE_SW_readPayload(event);
+  const data = MAXUSE_SW_pickData(payload);
+  const notification = payload.notification || {};
 
-  firebase.initializeApp({
-    apiKey: "AIzaSyBu_dozVu0jC71-PuJn4h7eC33eWsjcxuc",
-    authDomain: "max-use-template-kantah-v1.firebaseapp.com",
-    projectId: "max-use-template-kantah-v1",
-    storageBucket: "max-use-template-kantah-v1.firebasestorage.app",
-    messagingSenderId: "961455902199",
-    appId: "1:961455902199:web:62a3fdaed44ca6f92d32f2"
-  });
+  const openUrl = MAXUSE_SW_normalizeOpenUrl(
+    data.url || data.link ||
+    (payload.fcmOptions && payload.fcmOptions.link) ||
+    (payload.webpush && payload.webpush.fcm_options && payload.webpush.fcm_options.link)
+  );
 
-  const messaging = firebase.messaging();
+  const nomor = data.nomor_berkas || "";
+  const tahun = data.tahun_berkas || "";
+  const pemohon = data.nama_pemohon || "";
+  const dari = data.dari_petugas || "";
+  const ke = data.ke_petugas || "";
 
-  messaging.onBackgroundMessage((payload) => {
-    const data = payload.data || {};
-    const openUrl = MAXUSE_SW_normalizeOpenUrl(data.url || data.link);
+  let title = data.title || notification.title || "MAX-USE";
+  let body = data.body || notification.body || "Ada notifikasi baru dari MAX-USE.";
 
-    const title = data.title || "MAX-USE";
-    const options = {
-      body: data.body || "Ada notifikasi baru dari MAX-USE.",
-      icon: data.icon || "./favicon.ico",
-      badge: data.badge || "./favicon.ico",
-      tag: data.tag || ("MAXUSE_" + Date.now()),
-      renotify: true,
-      silent: false,
-      vibrate: [260, 90, 260, 90, 260],
-      requireInteraction: data.requireInteraction === "true",
-      data: {
-        url: openUrl,
-        type: data.type || "GENERAL",
-        menu: data.menu || "",
-        nomor_berkas: data.nomor_berkas || "",
-        tahun_berkas: data.tahun_berkas || "",
-        nama_pemohon: data.nama_pemohon || "",
-        dari_petugas: data.dari_petugas || "",
-        ke_petugas: data.ke_petugas || ""
-      }
-    };
+  // Extra fallback agar notif KIRIM tetap informatif walau body kosong.
+  if (data.type === "UPDATING_KIRIM" && !data.body) {
+    title = "📥 Berkas Masuk" + (nomor ? ": " + nomor + (tahun ? "/" + tahun : "") : "");
+    const parts = [];
+    if (dari) parts.push("Dari: " + dari);
+    if (pemohon) parts.push("Pemohon: " + pemohon);
+    if (ke) parts.push("Untuk: " + ke);
+    body = parts.length ? parts.join(" • ") : "Ada berkas masuk ke Inbox MAX-USE.";
+  }
 
-    return self.registration.showNotification(title, options);
-  });
+  const options = {
+    body: body,
+    icon: data.icon || notification.icon || "./favicon.ico",
+    badge: data.badge || "./favicon.ico",
+    tag: data.tag || ("MAXUSE_" + Date.now()),
+    renotify: true,
+    silent: false,
+    vibrate: [280, 100, 280, 100, 280],
+    requireInteraction: data.requireInteraction === "true" || data.type === "UPDATING_KIRIM",
+    data: {
+      url: openUrl,
+      type: data.type || "GENERAL",
+      menu: data.menu || "",
+      nomor_berkas: nomor,
+      tahun_berkas: tahun,
+      nama_pemohon: pemohon,
+      dari_petugas: dari,
+      ke_petugas: ke
+    },
+    actions: [
+      { action: "open", title: "Buka Updating" }
+    ]
+  };
 
-  console.log("[MAX-USE FCM SW V5] aktif. Default open:", MAXUSE_DEFAULT_OPEN_URL);
-
-} catch (err) {
-  console.error("[MAX-USE FCM SW V5] evaluation/init failed:", err);
-}
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
