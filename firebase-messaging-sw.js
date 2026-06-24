@@ -1,18 +1,17 @@
 /* ==========================================================
-   MAX-USE TEMPLATE KANTAH v1
-   FILE: firebase-messaging-sw.js
-   VERSION: V6_RAW_PUSH_FINAL
-   PURPOSE: Service Worker Web Push MAX-USE
+   MAX-USE FCM SERVICE WORKER
+   VERSION: V11_PIDIE_RAW_PUSH_FINAL
+   PURPOSE: Service Worker Web Push MAX-USE Pidie
 
-   Kenapa V6:
+   Catatan:
    - Tidak memakai firebase-messaging-compat di service worker.
    - Menangkap event push langsung dengan self.addEventListener("push").
    - Mencegah notifikasi generik Chrome:
      "Situs ini diperbarui di latar belakang".
-   - Semua klik notif diarahkan ke halaman Updating Framer.
+   - Semua fallback klik notif diarahkan ke halaman Updating Pidie final.
 ========================================================== */
 
-const MAXUSE_DEFAULT_OPEN_URL = "https://max-use-template-kantahv1.framer.website/updating";
+const MAXUSE_DEFAULT_OPEN_URL = "https://atrbpnpidiemaxuse.framer.website/updating";
 
 function MAXUSE_SW_normalizeOpenUrl(rawUrl) {
   const text = String(rawUrl || "").trim();
@@ -49,8 +48,6 @@ function MAXUSE_SW_readPayload(event) {
 }
 
 function MAXUSE_SW_pickData(payload) {
-  // FCM data message biasanya masuk di payload.data.
-  // Fallback dibuat agar tetap aman jika bentuk payload berbeda.
   return payload && payload.data ? payload.data : (payload || {});
 }
 
@@ -82,7 +79,6 @@ self.addEventListener("push", (event) => {
   let title = data.title || notification.title || "MAX-USE";
   let body = data.body || notification.body || "Ada notifikasi baru dari MAX-USE.";
 
-  // Extra fallback agar notif KIRIM tetap informatif walau body kosong.
   if (data.type === "UPDATING_KIRIM" && !data.body) {
     title = "📥 Berkas Masuk" + (nomor ? ": " + nomor + (tahun ? "/" + tahun : "") : "");
     const parts = [];
