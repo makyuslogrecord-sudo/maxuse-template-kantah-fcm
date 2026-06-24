@@ -3,31 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>MAX-USE FCM Notifier</title>
+  <title>Aktifkan Notifikasi Updating</title>
   <meta name="theme-color" content="#0f172a">
+
+  <!--
+    MAX-USE FCM NOTIFIER
+    VERSION : V11_SIMPLIFIED_PIDIE
+    PURPOSE : Aktivasi FCM Updating Pidie yang lebih mudah untuk petugas.
+
+    Cara pakai ideal dari Framer Updating:
+    https://makyuslogrecord-sudo.github.io/maxuse-template-kantah-fcm/
+      ?email=<EMAIL_PETUGAS>
+      &nama_petugas=<NAMA_PETUGAS>
+      &server=<ENDPOINT_PAS_1_PIDIE>
+      &back=<LINK_UPDATING_PIDIE>
+      &kode_kantah=KANTAH_PIDIE
+      &nama_kantah=Kantah%20Kabupaten%20Pidie
+      &source=updating_pidie_v11
+
+    Catatan:
+    - DEFAULT_SERVER sudah diarahkan ke PAS 1 Pidie agar tetap bisa dibuka manual.
+    - DEFAULT_BACK sudah diarahkan ke halaman Updating Pidie final.
+    - Tombol reset disembunyikan dalam panel bantuan agar petugas tidak salah klik.
+    - Tombol test notifikasi memanggil action=testfcm di PAS 1.
+  -->
+
   <style>
     *{box-sizing:border-box}
+    html,body{min-height:100%}
     body{
       margin:0;
       min-height:100vh;
-      font-family:Arial,system-ui,sans-serif;
+      font-family:Inter,Arial,system-ui,sans-serif;
       background:
-        radial-gradient(circle at 20% 10%,rgba(56,189,248,.18),transparent 32%),
-        radial-gradient(circle at 85% 5%,rgba(139,92,246,.15),transparent 30%),
-        linear-gradient(180deg,#f8fbff,#eef4fb 55%,#f8fafc);
+        radial-gradient(circle at 18% 8%,rgba(56,189,248,.20),transparent 30%),
+        radial-gradient(circle at 88% 4%,rgba(59,130,246,.16),transparent 32%),
+        radial-gradient(circle at 65% 100%,rgba(34,197,94,.12),transparent 35%),
+        linear-gradient(180deg,#f8fbff,#edf5ff 58%,#f8fafc);
       color:#0f172a;
       display:flex;
       align-items:flex-start;
       justify-content:center;
       padding:18px;
-      padding-top:max(14px,env(safe-area-inset-top));
+      padding-top:max(18px,env(safe-area-inset-top));
     }
     .card{
-      width:min(100%,520px);
-      background:rgba(255,255,255,.92);
-      border:1px solid rgba(148,163,184,.24);
+      width:min(100%,540px);
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(148,163,184,.26);
       border-radius:30px;
-      box-shadow:0 28px 90px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.9);
+      box-shadow:0 28px 90px rgba(15,23,42,.15), inset 0 1px 0 rgba(255,255,255,.9);
       overflow:hidden;
       position:relative;
     }
@@ -37,9 +62,9 @@
       left:20px;right:20px;top:0;
       height:5px;
       border-radius:999px;
-      background:linear-gradient(90deg,transparent,#38bdf8,#8b5cf6,#22c55e,transparent);
+      background:linear-gradient(90deg,transparent,#22c55e,#38bdf8,#2563eb,transparent);
       background-size:220% 100%;
-      animation:sweep 1.2s ease-in-out infinite;
+      animation:sweep 1.6s ease-in-out infinite;
     }
     .inner{padding:28px 24px 22px}
     .badge{
@@ -48,82 +73,144 @@
       background:#eef6ff;border:1px solid #bfdbfe;color:#1e40af;
       font-size:12px;font-weight:900;margin-bottom:15px;
     }
-    h1{margin:0 0 8px;font-size:28px;line-height:1.08;letter-spacing:-.04em}
+    h1{margin:0 0 8px;font-size:29px;line-height:1.08;letter-spacing:-.045em}
     p{margin:0 0 16px;color:#475569;line-height:1.55;font-size:14px}
+    label{display:block;font-size:12px;font-weight:900;color:#475569;margin-top:10px}
     .inputBox{
       width:100%;
-      padding:13px 14px;
+      padding:14px 15px;
       border-radius:18px;
       background:#f8fafc;
       border:1px solid #dbe3ef;
       color:#0f172a;
       font-size:14px;
-      font-weight:800;
+      font-weight:850;
       outline:none;
-      margin:8px 0 12px;
+      margin:8px 0 10px;
     }
     .inputBox:focus{
       border-color:#38bdf8;
       box-shadow:0 0 0 4px rgba(56,189,248,.14);
       background:#fff;
     }
-    label{display:block;font-size:12px;font-weight:900;color:#475569;margin-top:8px}
-    button{
-      width:100%;min-height:52px;border:0;border-radius:20px;cursor:pointer;font-weight:950;color:#fff;
-      background:linear-gradient(135deg,#2563eb,#06b6d4 52%,#22c55e);
-      box-shadow:0 18px 42px rgba(37,99,235,.25);font-size:15px;transition:.2s ease;padding:12px 14px;
-    }
-    button:hover{transform:translateY(-1px)}
-    button:disabled{opacity:.7;cursor:wait;transform:none}
-    .secondary{margin-top:10px;background:linear-gradient(135deg,#0f172a,#1e293b);box-shadow:0 14px 34px rgba(15,23,42,.22)}
-    .ghost{margin-top:10px;background:linear-gradient(135deg,#64748b,#334155);box-shadow:0 12px 28px rgba(51,65,85,.18)}
-    .serverNote{
+    .connected{
       margin:10px 0 14px;
-      padding:14px;
+      padding:14px 14px 13px;
       border-radius:20px;
-      background:#fff7ed;
-      border:1px solid #fdba74;
-      color:#9a3412;
+      background:#ecfdf5;
+      border:1px solid #86efac;
+      color:#166534;
       font-size:13px;
       line-height:1.45;
       text-align:center;
-      font-weight:700;
+      font-weight:850;
     }
+    .connected small{
+      display:block;
+      margin-top:4px;
+      color:#15803d;
+      font-weight:700;
+      opacity:.95;
+    }
+    button{
+      width:100%;
+      min-height:54px;
+      border:0;
+      border-radius:20px;
+      cursor:pointer;
+      font-weight:950;
+      color:#fff;
+      background:linear-gradient(135deg,#2563eb,#06b6d4 52%,#22c55e);
+      box-shadow:0 18px 42px rgba(37,99,235,.25);
+      font-size:15px;
+      transition:.18s ease;
+      padding:12px 14px;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:disabled{opacity:.68;cursor:wait;transform:none}
+    .secondary{margin-top:10px;background:linear-gradient(135deg,#0f172a,#1e293b);box-shadow:0 14px 34px rgba(15,23,42,.22)}
+    .soft{margin-top:10px;background:linear-gradient(135deg,#64748b,#334155);box-shadow:0 12px 28px rgba(51,65,85,.18)}
+    .test{margin-top:10px;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 14px 34px rgba(22,163,74,.22);display:none}
     .status{
-      margin-top:16px;padding:14px;border-radius:20px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;
-      font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;
+      margin-top:16px;
+      padding:14px;
+      border-radius:20px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      color:#334155;
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+      word-break:break-word;
     }
     .ok{background:#ecfdf5;border-color:#86efac;color:#166534}
     .warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
     .bad{background:#fff1f2;border-color:#fca5a5;color:#991b1b}
+    details{
+      margin-top:13px;
+      border:1px solid #e2e8f0;
+      background:#f8fafc;
+      border-radius:18px;
+      padding:12px 14px;
+    }
+    summary{
+      cursor:pointer;
+      color:#475569;
+      font-weight:900;
+      font-size:13px;
+    }
+    .helpText{margin-top:10px;color:#64748b;font-size:12px;line-height:1.5}
     .small{font-size:12px;color:#64748b;margin-top:14px;line-height:1.45}
     @keyframes sweep{0%{background-position:160% 0;opacity:.65}50%{opacity:1}100%{background-position:-60% 0;opacity:.75}}
+
+    @media(max-width:420px){
+      .inner{padding:26px 18px 20px}
+      h1{font-size:25px}
+      .card{border-radius:26px}
+    }
   </style>
 </head>
+
 <body>
   <main class="card">
     <div class="inner">
-      <div class="badge">🔔 MAX-USE FCM Notifier V10</div>
-      <h1>Aktifkan Notifikasi MAX-USE</h1>
+      <div class="badge">🔔 MAX-USE FCM Notifier V11</div>
+
+      <h1>Aktifkan Notifikasi Updating</h1>
       <p>
-        Masukkan email petugas, lalu aktifkan/perbarui notifikasi perangkat.
-        Halaman ini bisa dibuka langsung tanpa harus dari Framer.
+        Pastikan email petugas sudah benar, lalu aktifkan notifikasi untuk perangkat ini.
+        Setelah aktif, notifikasi berkas masuk akan muncul dari MAX-USE Updating.
       </p>
 
       <label for="emailInput">Email petugas</label>
-      <input id="emailInput" class="inputBox" type="email" placeholder="contoh: makyuslogrecord@gmail.com">
+      <input id="emailInput" class="inputBox" type="email" placeholder="contoh: nama@atrbpn.go.id" autocomplete="email">
 
       <input id="serverInput" type="hidden">
-      <div class="serverNote">Server PAS 1.01 sudah tersambung otomatis. Tidak perlu isi URL manual.</div>
+      <input id="backInput" type="hidden">
 
-      <button id="activateBtn" type="button">🔔 Aktifkan / Perbarui Notifikasi MAX-USE</button>
+      <div class="connected" id="kantahBox">
+        Terhubung ke Kantah Kabupaten Pidie
+        <small>Notifikasi akan aktif untuk akun petugas ini.</small>
+      </div>
+
+      <button id="activateBtn" type="button">🔔 Aktifkan Notifikasi di Perangkat Ini</button>
+      <button id="testBtn" type="button" class="test">✅ Kirim Test Notifikasi</button>
       <button id="backBtn" type="button" class="secondary">↩️ Kembali ke Updating</button>
-      <button id="resetBtn" type="button" class="ghost">♻️ Reset Service Worker Saja</button>
-      <button id="manualBtn" type="button" class="ghost" style="display:none;">🛠️ Simpan Token Manual</button>
 
-      <div class="status warn" id="statusBox">Menunggu aktivasi...</div>
+      <div class="status warn" id="statusBox">Status: belum aktif.
+Klik tombol biru lalu pilih Izinkan di browser.</div>
+
+      <details>
+        <summary>Bantuan jika notifikasi belum masuk</summary>
+        <div class="helpText">
+          Gunakan tombol perbaikan hanya jika aktivasi gagal, token tidak masuk ke sheet, atau notifikasi tetap tidak muncul setelah izin diberikan.
+        </div>
+        <button id="resetBtn" type="button" class="soft">♻️ Perbaiki Notifikasi</button>
+        <button id="manualBtn" type="button" class="soft" style="display:none;">🛠️ Simpan Token Manual</button>
+      </details>
+
       <div class="small">
-        V10 memakai service worker RAW PUSH FINAL agar notif tidak lagi generik.
+        V11 dibuat untuk aktivasi cepat: buka dari Updating → klik aktifkan → izinkan → selesai.
       </div>
     </div>
   </main>
@@ -142,36 +229,68 @@
     };
 
     const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
-    const DEFAULT_EMAIL = "makyuslogrecord@gmail.com";
-    const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec";
-    const DEFAULT_BACK = "https://max-use-template-kantahv1.framer.website/updating";
-    const SW_VERSION = "v10_raw_" + Date.now();
+
+    const DEFAULT_EMAIL = "";
+    const DEFAULT_NAMA_KANTAH = "Kantah Kabupaten Pidie";
+    const DEFAULT_KODE_KANTAH = "KANTAH_PIDIE";
+    const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbw_rI-WKPgWmESYYvpdsHr2Jp9GuGUB2BaDuBLq1ZUqzoPkkgYOw7zIfSo3njXDaapOHQ/exec";
+    const DEFAULT_BACK = "https://atrbpnpidiemaxuse.framer.website/updating";
+    const APP_VERSION = "FCM_PIDIE_V11_SIMPLIFIED";
+    const SW_VERSION = "v11_pidie_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
     const serverInput = document.getElementById("serverInput");
+    const backInput = document.getElementById("backInput");
     const statusBox = document.getElementById("statusBox");
     const activateBtn = document.getElementById("activateBtn");
+    const testBtn = document.getElementById("testBtn");
     const backBtn = document.getElementById("backBtn");
     const resetBtn = document.getElementById("resetBtn");
     const manualBtn = document.getElementById("manualBtn");
+    const kantahBox = document.getElementById("kantahBox");
 
+    let lastToken = "";
     let lastSaveUrl = "";
+    let lastSavedOk = false;
 
-    emailInput.value = (params.get("email") || DEFAULT_EMAIL).trim().toLowerCase();
-    serverInput.value = (params.get("server") || DEFAULT_SERVER).trim() || DEFAULT_SERVER;
+    init();
+
+    function init(){
+      const email = (params.get("email") || DEFAULT_EMAIL || "").trim().toLowerCase();
+      const namaKantah = (params.get("nama_kantah") || DEFAULT_NAMA_KANTAH).trim();
+      const kodeKantah = (params.get("kode_kantah") || DEFAULT_KODE_KANTAH).trim();
+
+      emailInput.value = email;
+      serverInput.value = (params.get("server") || DEFAULT_SERVER).trim() || DEFAULT_SERVER;
+      backInput.value = (params.get("back") || DEFAULT_BACK).trim() || DEFAULT_BACK;
+
+      kantahBox.innerHTML = "Terhubung ke " + escapeHtml(namaKantah || DEFAULT_NAMA_KANTAH) +
+        "<small>Kode: " + escapeHtml(kodeKantah || DEFAULT_KODE_KANTAH) + " · notifikasi untuk akun petugas ini.</small>";
+
+      if(email){
+        setStatus("Status: siap diaktifkan untuk " + email + ".\nKlik tombol biru lalu pilih Izinkan di browser.", "warn");
+      }else{
+        setStatus("Status: email belum terbaca.\nIsi email petugas dulu, lalu aktifkan notifikasi.", "warn");
+      }
+    }
 
     window.addEventListener("error", function(event){
-      setStatus("Error halaman notifier:\\n" + (event.message || "Unknown error"), "bad");
+      setStatus("Error halaman notifier:\n" + (event.message || "Unknown error"), "bad");
     });
 
     activateBtn.addEventListener("click", activateFCM);
+    testBtn.addEventListener("click", sendTestNotification);
     backBtn.addEventListener("click", backToUpdating);
     resetBtn.addEventListener("click", resetServiceWorkerOnly);
     manualBtn.addEventListener("click", openManualSave);
 
     function currentEmail(){ return String(emailInput.value || "").trim().toLowerCase(); }
     function currentServer(){ return String(serverInput.value || DEFAULT_SERVER).trim(); }
+    function currentBack(){ return String(backInput.value || DEFAULT_BACK).trim(); }
+    function currentNamaPetugas(){ return String(params.get("nama_petugas") || params.get("nama") || "").trim(); }
+    function currentKodeKantah(){ return String(params.get("kode_kantah") || DEFAULT_KODE_KANTAH).trim(); }
+    function currentNamaKantah(){ return String(params.get("nama_kantah") || DEFAULT_NAMA_KANTAH).trim(); }
 
     function setStatus(text, type){
       statusBox.textContent = text;
@@ -179,67 +298,51 @@
       try{ statusBox.scrollIntoView({block:"nearest", behavior:"smooth"}); }catch(e){}
     }
 
+    function escapeHtml(str){
+      return String(str || "").replace(/[&<>"']/g, function(m){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
+      });
+    }
+
     function deviceInfo(){
       return [
-        "MAX-USE GitHub Notifier V10",
+        "MAX-USE GitHub Notifier V11",
         navigator.userAgent || "",
-        "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
+        "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || ""),
+        "source=" + (params.get("source") || "updating_pidie_v11")
       ].join(" | ").slice(0, 900);
     }
 
-    function buildSaveUrl(token){
-      const server = currentServer();
-      const sep = server.includes("?") ? "&" : "?";
-      return server + sep +
-        "action=savefcmtoken" +
-        "&email=" + encodeURIComponent(currentEmail()) +
-        "&nama_petugas=" + encodeURIComponent(params.get("nama_petugas") || params.get("nama") || "") +
-        "&token=" + encodeURIComponent(token) +
-        "&device_info=" + encodeURIComponent(deviceInfo()) +
-        "&platform=" + encodeURIComponent(navigator.platform || "WEB") +
-        "&browser=" + encodeURIComponent(navigator.userAgent || "") +
-        "&t=" + Date.now();
+    function addParam(url, key, value){
+      const sep = url.includes("?") ? "&" : "?";
+      return url + sep + encodeURIComponent(key) + "=" + encodeURIComponent(value == null ? "" : String(value));
     }
 
-    async function resetServiceWorkerOnly(){
-      try{
-        if(!("serviceWorker" in navigator)){
-          setStatus("Browser belum mendukung service worker.", "bad");
-          return;
-        }
+    function buildSaveUrl(token){
+      let url = currentServer();
+      url = addParam(url, "action", "savefcmtoken");
+      url = addParam(url, "email", currentEmail());
+      url = addParam(url, "nama_petugas", currentNamaPetugas());
+      url = addParam(url, "token", token);
+      url = addParam(url, "device_info", deviceInfo());
+      url = addParam(url, "platform", navigator.platform || "WEB");
+      url = addParam(url, "browser", navigator.userAgent || "");
+      url = addParam(url, "izin_notifikasi", Notification.permission || "UNKNOWN");
+      url = addParam(url, "kode_kantah", currentKodeKantah());
+      url = addParam(url, "nama_kantah", currentNamaKantah());
+      url = addParam(url, "app_version", APP_VERSION);
+      url = addParam(url, "source", params.get("source") || "updating_pidie_v11");
+      url = addParam(url, "t", Date.now());
+      return url;
+    }
 
-        const lanjut = confirm([
-          "Reset Service Worker hanya dipakai jika notifikasi masih 404/gagal.",
-          "",
-          "Setelah reset, halaman akan dimuat ulang.",
-          "Lanjut?"
-        ].join("\\n"));
-
-        if(!lanjut) return;
-
-        setStatus("Mereset service worker dan cache lama...", "warn");
-
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for(const reg of regs){
-          if(String(reg.scope || "").includes("/maxuse-template-kantah-fcm/")){
-            await reg.unregister();
-          }
-        }
-
-        if("caches" in window){
-          const keys = await caches.keys();
-          await Promise.all(keys.map(k => caches.delete(k)));
-        }
-
-        setStatus("✅ Reset selesai. Halaman akan dimuat ulang. Setelah terbuka lagi, klik Aktifkan / Perbarui Notifikasi.", "ok");
-
-        setTimeout(function(){
-          location.href = location.pathname + "?email=" + encodeURIComponent(currentEmail()) + "&t=9r";
-        }, 1200);
-
-      }catch(err){
-        setStatus("Gagal reset service worker:\\n" + (err && err.message ? err.message : String(err)), "bad");
-      }
+    function buildTestUrl(){
+      let url = currentServer();
+      url = addParam(url, "action", "testfcm");
+      url = addParam(url, "email", currentEmail());
+      url = addParam(url, "source", "notifier_v11_test");
+      url = addParam(url, "t", Date.now());
+      return url;
     }
 
     function jsonp(url){
@@ -282,7 +385,7 @@
 
     async function sendNoCors(url){
       await fetch(url, { method:"GET", mode:"no-cors", cache:"no-store", credentials:"omit" });
-      return { ok:true, success:true, mode:"NO_CORS_GET", message:"Request dikirim. Cek sheet 06_FCM_TOKENS." };
+      return { ok:true, success:true, mode:"NO_CORS_GET", message:"Request dikirim. Cek sheet 06_FCM_TOKENS atau tunggu test notifikasi." };
     }
 
     async function saveTokenToServer(token){
@@ -295,7 +398,7 @@
           result.mode = result.mode || "JSONP";
           return result;
         }
-        throw new Error("Balasan server tidak OK");
+        throw new Error((result && result.message) || "Balasan server tidak OK");
       }catch(err1){
         try{
           const r2 = await sendNoCors(lastSaveUrl);
@@ -317,7 +420,7 @@
           return;
         }
         if(!currentServer()){
-          setStatus("URL server kosong.", "bad");
+          setStatus("Server PAS 1 belum terbaca.", "bad");
           return;
         }
         if(!("serviceWorker" in navigator)){
@@ -325,30 +428,31 @@
           return;
         }
         if(!("Notification" in window)){
-          setStatus("Browser ini belum mendukung Notification API.", "bad");
+          setStatus("Browser ini belum mendukung notifikasi.", "bad");
           return;
         }
 
         activateBtn.disabled = true;
 
-        setStatus("Meminta izin notifikasi...", "warn");
+        setStatus("Meminta izin notifikasi...\nPilih Izinkan/Allow di browser.", "warn");
         const permission = await Notification.requestPermission();
+
         if(permission !== "granted"){
-          setStatus("Izin notifikasi belum diberikan. Status: " + permission, "bad");
+          setStatus("Izin notifikasi belum diberikan.\nStatus browser: " + permission + "\n\nAktifkan izin notifikasi di pengaturan browser, lalu coba lagi.", "bad");
           activateBtn.disabled = false;
           return;
         }
 
-        setStatus("Mendaftarkan / memperbarui service worker...", "warn");
+        setStatus("Mendaftarkan perangkat...", "warn");
 
         const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js?version=" + SW_VERSION, { scope: "./" });
         try{ await registration.update(); }catch(e){}
         await navigator.serviceWorker.ready;
 
-        setStatus("Mengambil token FCM baru...", "warn");
-
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
+
+        setStatus("Mengambil token notifikasi perangkat...", "warn");
 
         let token = "";
         try{
@@ -360,15 +464,14 @@
           const msg = tokenErr && tokenErr.message ? tokenErr.message : String(tokenErr);
           if(msg.toLowerCase().includes("push service error")){
             setStatus([
-              "Gagal aktivasi FCM: Registration failed - push service error.",
+              "Gagal aktivasi: push service error.",
               "",
               "Solusi cepat:",
-              "1. Tutup semua tab GitHub MAX-USE.",
-              "2. Chrome > Settings > Site settings > All sites.",
-              "3. Cari makyuslogrecord-sudo.github.io.",
-              "4. Clear & reset / Hapus data situs.",
-              "5. Buka lagi halaman notifier dan aktifkan ulang."
-            ].join("\\n"), "bad");
+              "1. Klik Bantuan jika notifikasi belum masuk.",
+              "2. Klik Perbaiki Notifikasi.",
+              "3. Buka ulang halaman ini dari Updating.",
+              "4. Klik Aktifkan Notifikasi lagi."
+            ].join("\n"), "bad");
             activateBtn.disabled = false;
             return;
           }
@@ -376,60 +479,147 @@
         }
 
         if(!token){
-          setStatus("Token kosong. Coba refresh halaman lalu aktifkan ulang.", "bad");
+          setStatus("Token kosong. Refresh halaman lalu aktifkan ulang.", "bad");
           activateBtn.disabled = false;
           return;
         }
 
-        setStatus("Token berhasil dibuat. Menyimpan ke MAX-USE...", "warn");
+        lastToken = token;
+        setStatus("Token perangkat berhasil dibuat.\nMenyimpan ke MAX-USE Pidie...", "warn");
 
         const result = await saveTokenToServer(token);
 
         if(result && (result.ok || result.success)){
+          lastSavedOk = true;
+          testBtn.style.display = "block";
+
           setStatus([
-            "✅ Notifikasi MAX-USE berhasil aktif / diperbarui.",
+            "✅ Notifikasi berhasil aktif di perangkat ini.",
             "",
             "Email: " + currentEmail(),
-            "Mode: " + (result.mode || "-"),
+            "Kantah: " + currentNamaKantah(),
+            "Mode simpan: " + (result.mode || "-"),
             "",
-            "Halaman akan kembali ke Updating dalam 3 detik."
-          ].join("\\n"), "ok");
+            "Langkah terakhir: klik Kirim Test Notifikasi untuk memastikan bunyi."
+          ].join("\n"), "ok");
 
           try{
             new Notification("MAX-USE Notifikasi Aktif", {
-              body: "Token diperbarui dengan RAW PUSH final. Test notifikasi terbaru.",
-              tag: "MAXUSE_ACTIVE_V10",
-              data: { url: DEFAULT_BACK },
+              body: "Perangkat ini sudah terdaftar untuk notifikasi Updating.",
+              tag: "MAXUSE_ACTIVE_V11",
+              data: { url: currentBack() },
               silent: false,
               vibrate: [220,90,220]
             });
           }catch(e){}
 
-          setTimeout(function(){
-            location.href = DEFAULT_BACK;
-          }, 3000);
         }else{
-          setStatus("Token dibuat, tetapi simpan otomatis belum OK. Klik Simpan Token Manual.", "bad");
+          lastSavedOk = false;
+          setStatus("Token dibuat, tetapi simpan otomatis belum OK.\nKlik Simpan Token Manual di bagian bantuan.", "bad");
           manualBtn.style.display = "block";
-          activateBtn.disabled = false;
+        }
+
+        activateBtn.disabled = false;
+
+      }catch(err){
+        setStatus("Gagal aktivasi FCM:\n" + (err && err.message ? err.message : String(err)), "bad");
+        activateBtn.disabled = false;
+      }
+    }
+
+    async function sendTestNotification(){
+      try{
+        if(!currentEmail()){
+          setStatus("Email kosong. Tidak bisa kirim test.", "bad");
+          return;
+        }
+
+        testBtn.disabled = true;
+        setStatus("Mengirim test notifikasi dari server Pidie...", "warn");
+
+        const url = buildTestUrl();
+        let result;
+
+        try{
+          result = await jsonp(url);
+        }catch(e1){
+          result = await sendNoCors(url);
+        }
+
+        if(result && (result.ok || result.success)){
+          setStatus([
+            "✅ Perintah test notifikasi sudah dikirim.",
+            "",
+            "Email: " + currentEmail(),
+            "Jika token dan Firebase benar, notifikasi akan muncul sebentar lagi.",
+            "",
+            "Setelah berhasil, klik Kembali ke Updating."
+          ].join("\n"), "ok");
+        }else{
+          setStatus("Test dikirim tetapi server belum memberi balasan OK.\nCek Apps Script log atau sheet 06_FCM_TOKENS.", "warn");
         }
 
       }catch(err){
-        setStatus("Gagal aktivasi FCM:\\n" + (err && err.message ? err.message : String(err)), "bad");
-        activateBtn.disabled = false;
+        setStatus("Gagal kirim test notifikasi:\n" + (err && err.message ? err.message : String(err)), "bad");
+      }finally{
+        testBtn.disabled = false;
+      }
+    }
+
+    async function resetServiceWorkerOnly(){
+      try{
+        if(!("serviceWorker" in navigator)){
+          setStatus("Browser belum mendukung service worker.", "bad");
+          return;
+        }
+
+        const lanjut = confirm([
+          "Perbaiki Notifikasi hanya dipakai jika aktivasi gagal atau notifikasi tidak muncul.",
+          "",
+          "Setelah proses ini, halaman akan dimuat ulang.",
+          "Lanjut?"
+        ].join("\n"));
+
+        if(!lanjut) return;
+
+        setStatus("Membersihkan service worker dan cache lama...", "warn");
+
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for(const reg of regs){
+          if(String(reg.scope || "").includes("/maxuse-template-kantah-fcm/")){
+            await reg.unregister();
+          }
+        }
+
+        if("caches" in window){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+
+        setStatus("✅ Perbaikan selesai. Halaman akan dimuat ulang. Setelah terbuka, klik Aktifkan Notifikasi lagi.", "ok");
+
+        const keep = new URLSearchParams(location.search);
+        keep.set("t", String(Date.now()));
+        setTimeout(function(){
+          location.href = location.pathname + "?" + keep.toString();
+        }, 1200);
+
+      }catch(err){
+        setStatus("Gagal perbaiki notifikasi:\n" + (err && err.message ? err.message : String(err)), "bad");
       }
     }
 
     function openManualSave(){
       if(!lastSaveUrl){
-        setStatus("Belum ada URL simpan. Klik aktifkan notifikasi dulu.", "bad");
+        setStatus("Belum ada token untuk disimpan manual. Klik Aktifkan Notifikasi dulu.", "bad");
         return;
       }
-      location.href = lastSaveUrl;
+      window.open(lastSaveUrl, "_blank", "noopener,noreferrer");
+      setStatus("Tab simpan manual sudah dibuka.\nSetelah selesai, kembali ke halaman ini lalu cek sheet 06_FCM_TOKENS.", "warn");
     }
 
     function backToUpdating(){
-      location.href = DEFAULT_BACK;
+      location.href = currentBack();
     }
   </script>
 </body>
