@@ -8,22 +8,22 @@
 
   <!--
     MAX-USE FCM NOTIFIER
-    VERSION : V11_SIMPLIFIED_PIDIE
-    PURPOSE : Aktivasi FCM Updating Pidie yang lebih mudah untuk petugas.
+    VERSION : V12_UNIVERSAL_KANTAH
+    PURPOSE : Aktivasi FCM Updating universal untuk semua Kantah MAX-USE.
 
     Cara pakai ideal dari Framer Updating:
     https://makyuslogrecord-sudo.github.io/maxuse-template-kantah-fcm/
       ?email=<EMAIL_PETUGAS>
       &nama_petugas=<NAMA_PETUGAS>
-      &server=<ENDPOINT_PAS_1_PIDIE>
-      &back=<LINK_UPDATING_PIDIE>
-      &kode_kantah=KANTAH_PIDIE
-      &nama_kantah=Kantah%20Kabupaten%20Pidie
-      &source=updating_pidie_v11
+      &server=<ENDPOINT_PAS_1_KANTAH>
+      &back=<LINK_UPDATING_KANTAH>
+      &kode_kantah=KANTAH_SINGKIL
+      &nama_kantah=Kantah%20Kabupaten%20Aceh%20Singkil
+      &source=updating_kantah_v12
 
     Catatan:
-    - DEFAULT_SERVER sudah diarahkan ke PAS 1 Pidie agar tetap bisa dibuka manual.
-    - DEFAULT_BACK sudah diarahkan ke halaman Updating Pidie final.
+    - DEFAULT_SERVER dikosongkan agar tidak jatuh ke Pidie/Singkil jika parameter Kantah tidak lengkap.
+    - DEFAULT_BACK dikosongkan agar klik kembali/notifikasi memakai parameter back dari Kantah pemanggil.
     - Tombol reset disembunyikan dalam panel bantuan agar petugas tidak salah klik.
     - Tombol test notifikasi memanggil action=testfcm di PAS 1.
   -->
@@ -189,7 +189,7 @@
       <input id="backInput" type="hidden">
 
       <div class="connected" id="kantahBox">
-        Terhubung ke Kantah Kabupaten Pidie
+        Terhubung ke MAX-USE Kantah
         <small>Notifikasi akan aktif untuk akun petugas ini.</small>
       </div>
 
@@ -210,7 +210,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       </details>
 
       <div class="small">
-        V11 dibuat untuk aktivasi cepat: buka dari Updating → klik aktifkan → izinkan → selesai.
+        V12 universal: buka dari Updating Kantah → klik aktifkan → izinkan → selesai.
       </div>
     </div>
   </main>
@@ -231,12 +231,12 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     const FCM_VAPID_KEY = "BND0JsDaRm-KQHtpZTozHFAjv02jYZQibXH596KbDY9AJtcwrlY9Ca70gdvXdK_qku6iBcfnP8gIVLs0XWFGv7k";
 
     const DEFAULT_EMAIL = "";
-    const DEFAULT_NAMA_KANTAH = "Kantah Kabupaten Pidie";
-    const DEFAULT_KODE_KANTAH = "KANTAH_PIDIE";
-    const DEFAULT_SERVER = "https://script.google.com/macros/s/AKfycbw_rI-WKPgWmESYYvpdsHr2Jp9GuGUB2BaDuBLq1ZUqzoPkkgYOw7zIfSo3njXDaapOHQ/exec";
-    const DEFAULT_BACK = "https://atrbpnpidiemaxuse.framer.website/updating";
-    const APP_VERSION = "FCM_PIDIE_V11_SIMPLIFIED";
-    const SW_VERSION = "v11_pidie_" + Date.now();
+    const DEFAULT_NAMA_KANTAH = "MAX-USE Kantah";
+    const DEFAULT_KODE_KANTAH = "";
+    const DEFAULT_SERVER = "";
+    const DEFAULT_BACK = "";
+    const APP_VERSION = "FCM_UNIVERSAL_V12_KANTAH";
+    const SW_VERSION = "v12_universal_" + Date.now();
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
@@ -262,16 +262,27 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       const kodeKantah = (params.get("kode_kantah") || DEFAULT_KODE_KANTAH).trim();
 
       emailInput.value = email;
-      serverInput.value = (params.get("server") || DEFAULT_SERVER).trim() || DEFAULT_SERVER;
-      backInput.value = (params.get("back") || DEFAULT_BACK).trim() || DEFAULT_BACK;
+      serverInput.value = (params.get("server") || DEFAULT_SERVER).trim();
+      backInput.value = (params.get("back") || DEFAULT_BACK).trim();
 
       kantahBox.innerHTML = "Terhubung ke " + escapeHtml(namaKantah || DEFAULT_NAMA_KANTAH) +
-        "<small>Kode: " + escapeHtml(kodeKantah || DEFAULT_KODE_KANTAH) + " · notifikasi untuk akun petugas ini.</small>";
+        "<small>Kode: " + escapeHtml(kodeKantah || "BELUM_TERBACA") + " · notifikasi untuk akun petugas ini.</small>";
 
-      if(email){
-        setStatus("Status: siap diaktifkan untuk " + email + ".\nKlik tombol biru lalu pilih Izinkan di browser.", "warn");
+      const missing = [];
+      if(!email) missing.push("email");
+      if(!serverInput.value) missing.push("server");
+      if(!backInput.value) missing.push("back");
+      if(!kodeKantah) missing.push("kode_kantah");
+
+      if(missing.length){
+        setStatus(
+          "Status: parameter Kantah belum lengkap.\n" +
+          "Kurang: " + missing.join(", ") + "\n\n" +
+          "Buka halaman ini dari menu Updating Kantah agar token tidak salah tersimpan.",
+          "bad"
+        );
       }else{
-        setStatus("Status: email belum terbaca.\nIsi email petugas dulu, lalu aktifkan notifikasi.", "warn");
+        setStatus("Status: siap diaktifkan untuk " + email + ".\nKlik tombol biru lalu pilih Izinkan di browser.", "warn");
       }
     }
 
@@ -286,11 +297,11 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     manualBtn.addEventListener("click", openManualSave);
 
     function currentEmail(){ return String(emailInput.value || "").trim().toLowerCase(); }
-    function currentServer(){ return String(serverInput.value || DEFAULT_SERVER).trim(); }
-    function currentBack(){ return String(backInput.value || DEFAULT_BACK).trim(); }
+    function currentServer(){ return String(serverInput.value || "").trim(); }
+    function currentBack(){ return String(backInput.value || "").trim(); }
     function currentNamaPetugas(){ return String(params.get("nama_petugas") || params.get("nama") || "").trim(); }
-    function currentKodeKantah(){ return String(params.get("kode_kantah") || DEFAULT_KODE_KANTAH).trim(); }
-    function currentNamaKantah(){ return String(params.get("nama_kantah") || DEFAULT_NAMA_KANTAH).trim(); }
+    function currentKodeKantah(){ return String(params.get("kode_kantah") || DEFAULT_KODE_KANTAH || "").trim(); }
+    function currentNamaKantah(){ return String(params.get("nama_kantah") || DEFAULT_NAMA_KANTAH || "MAX-USE Kantah").trim(); }
 
     function setStatus(text, type){
       statusBox.textContent = text;
@@ -309,7 +320,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
         "MAX-USE GitHub Notifier V11",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || ""),
-        "source=" + (params.get("source") || "updating_pidie_v11")
+        "source=" + (params.get("source") || "updating_kantah_v12")
       ].join(" | ").slice(0, 900);
     }
 
@@ -331,7 +342,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       url = addParam(url, "kode_kantah", currentKodeKantah());
       url = addParam(url, "nama_kantah", currentNamaKantah());
       url = addParam(url, "app_version", APP_VERSION);
-      url = addParam(url, "source", params.get("source") || "updating_pidie_v11");
+      url = addParam(url, "source", params.get("source") || "updating_kantah_v12");
       url = addParam(url, "t", Date.now());
       return url;
     }
@@ -340,7 +351,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       let url = currentServer();
       url = addParam(url, "action", "testfcm");
       url = addParam(url, "email", currentEmail());
-      url = addParam(url, "source", "notifier_v11_test");
+      url = addParam(url, "source", "notifier_universal_v12_test");
       url = addParam(url, "t", Date.now());
       return url;
     }
@@ -420,7 +431,15 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
           return;
         }
         if(!currentServer()){
-          setStatus("Server PAS 1 belum terbaca.", "bad");
+          setStatus("Server PAS 1 belum terbaca.\nPastikan link aktivasi dari Updating mengirim parameter server.", "bad");
+          return;
+        }
+        if(!currentBack()){
+          setStatus("Link kembali Updating belum terbaca.\nPastikan link aktivasi dari Updating mengirim parameter back.", "bad");
+          return;
+        }
+        if(!currentKodeKantah()){
+          setStatus("Kode Kantah belum terbaca.\nPastikan link aktivasi mengirim parameter kode_kantah, misalnya KANTAH_SINGKIL.", "bad");
           return;
         }
         if(!("serviceWorker" in navigator)){
@@ -485,7 +504,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
         }
 
         lastToken = token;
-        setStatus("Token perangkat berhasil dibuat.\nMenyimpan ke MAX-USE Pidie...", "warn");
+        setStatus("Token perangkat berhasil dibuat.\nMenyimpan ke MAX-USE Kantah...", "warn");
 
         const result = await saveTokenToServer(token);
 
@@ -535,7 +554,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
         }
 
         testBtn.disabled = true;
-        setStatus("Mengirim test notifikasi dari server Pidie...", "warn");
+        setStatus("Mengirim test notifikasi dari server Kantah...", "warn");
 
         const url = buildTestUrl();
         let result;
@@ -619,7 +638,12 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     }
 
     function backToUpdating(){
-      location.href = currentBack();
+      const back = currentBack();
+      if(!back){
+        setStatus("Link kembali belum tersedia. Buka ulang aktivasi dari menu Updating Kantah.", "bad");
+        return;
+      }
+      location.href = back;
     }
   </script>
 </body>
