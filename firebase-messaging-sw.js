@@ -1,17 +1,20 @@
 /* ==========================================================
    MAX-USE FCM SERVICE WORKER
-   VERSION: V11_PIDIE_RAW_PUSH_FINAL
-   PURPOSE: Service Worker Web Push MAX-USE Pidie
+   VERSION: V12_UNIVERSAL_KANTAH_RAW_PUSH
+   PURPOSE: Service Worker Web Push MAX-USE universal untuk semua Kantah
 
    Catatan:
    - Tidak memakai firebase-messaging-compat di service worker.
    - Menangkap event push langsung dengan self.addEventListener("push").
    - Mencegah notifikasi generik Chrome:
      "Situs ini diperbarui di latar belakang".
-   - Semua fallback klik notif diarahkan ke halaman Updating Pidie final.
+   - Tidak ada fallback Pidie/Singkil. Klik notif memakai url/back/link dari payload, jika kosong kembali ke halaman notifier.
 ========================================================== */
 
-const MAXUSE_DEFAULT_OPEN_URL = "https://atrbpnpidiemaxuse.framer.website/updating";
+const MAXUSE_DEFAULT_OPEN_URL =
+  (self.registration && self.registration.scope)
+    ? self.registration.scope
+    : "https://makyuslogrecord-sudo.github.io/maxuse-template-kantah-fcm/";
 
 function MAXUSE_SW_normalizeOpenUrl(rawUrl) {
   const text = String(rawUrl || "").trim();
@@ -65,7 +68,12 @@ self.addEventListener("push", (event) => {
   const notification = payload.notification || {};
 
   const openUrl = MAXUSE_SW_normalizeOpenUrl(
-    data.url || data.link ||
+    data.url ||
+    data.back ||
+    data.click_action ||
+    data.link ||
+    notification.click_action ||
+    payload.click_action ||
     (payload.fcmOptions && payload.fcmOptions.link) ||
     (payload.webpush && payload.webpush.fcm_options && payload.webpush.fcm_options.link)
   );
@@ -108,7 +116,7 @@ self.addEventListener("push", (event) => {
       ke_petugas: ke
     },
     actions: [
-      { action: "open", title: "Buka Updating" }
+      { action: "open", title: "Buka MAX-USE" }
     ]
   };
 
