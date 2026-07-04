@@ -8,8 +8,8 @@
 
   <!--
     MAX-USE FCM NOTIFIER
-    VERSION : V12_UNIVERSAL_KANTAH
-    PURPOSE : Aktivasi FCM Updating universal untuk semua Kantah MAX-USE.
+    VERSION : V12_1_UNIVERSAL_KANTAH_LEGACY_SAFE
+    PURPOSE : Aktivasi FCM Updating universal untuk semua Kantah MAX-USE, dengan auto-detect untuk link lama Pidie/Singkil.
 
     Cara pakai ideal dari Framer Updating:
     https://makyuslogrecord-sudo.github.io/maxuse-template-kantah-fcm/
@@ -22,8 +22,10 @@
       &source=updating_kantah_v12
 
     Catatan:
-    - DEFAULT_SERVER dikosongkan agar tidak jatuh ke Pidie/Singkil jika parameter Kantah tidak lengkap.
-    - DEFAULT_BACK dikosongkan agar klik kembali/notifikasi memakai parameter back dari Kantah pemanggil.
+    - DEFAULT_SERVER dan DEFAULT_BACK tetap kosong agar tidak jatuh ke Kantah salah.
+    - V12.1 menambahkan KANTAH_REGISTRY untuk auto-detect link lama yang belum mengirim kode_kantah.
+    - Jika server/back/source mengandung Pidie atau Singkil, kode/nama Kantah diisi otomatis.
+    - Jika benar-benar tidak ada petunjuk Kantah, aktivasi tetap ditolak agar token tidak salah tersimpan.
     - Tombol reset disembunyikan dalam panel bantuan agar petugas tidak salah klik.
     - Tombol test notifikasi memanggil action=testfcm di PAS 1.
   -->
@@ -210,7 +212,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       </details>
 
       <div class="small">
-        V12 universal: buka dari Updating Kantah → klik aktifkan → izinkan → selesai.
+        V12.1 universal: buka dari Updating Kantah → klik aktifkan → izinkan → selesai.
       </div>
     </div>
   </main>
@@ -235,8 +237,39 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     const DEFAULT_KODE_KANTAH = "";
     const DEFAULT_SERVER = "";
     const DEFAULT_BACK = "";
-    const APP_VERSION = "FCM_UNIVERSAL_V12_KANTAH";
-    const SW_VERSION = "v12_universal_" + Date.now();
+    const APP_VERSION = "FCM_UNIVERSAL_V12_1_KANTAH_LEGACY_SAFE";
+    const SW_VERSION = "v12_1_universal_" + Date.now();
+
+    /*
+      Registry kecil agar 1 GitHub tetap universal, tapi link lama tidak langsung error.
+      Tambah Kantah baru di sini jika suatu saat ada Kantah yang belum sempat mengirim kode_kantah.
+      Link ideal tetap: setiap HTML Updating mengirim kode_kantah + nama_kantah + server + back.
+    */
+    const KANTAH_REGISTRY = [
+      {
+        kode: "KANTAH_PIDIE",
+        nama: "Kantah Kabupaten Pidie",
+        back: "https://atrbpnpidiemaxuse.framer.website/updating",
+        server: "https://script.google.com/macros/s/AKfycbw_rI-WKPgWmESYYvpdsHr2Jp9GuGUB2BaDuBLq1ZUqzoPkkgYOw7zIfSo3njXDaapOHQ/exec",
+        keys: ["pidie", "atrbpnpidiemaxuse", "KANTAH_PIDIE", "updating_pidie", "AKfycbw_rI-WKPgWmESYYvpdsHr2Jp9GuGUB2BaDuBLq1ZUqzoPkkgYOw7zIfSo3njXDaapOHQ"]
+      },
+      {
+        kode: "KANTAH_SINGKIL",
+        nama: "Kantah Kabupaten Aceh Singkil",
+        back: "https://max-use-template-kantahv1.framer.website/updating",
+        server: "https://script.google.com/macros/s/AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A/exec",
+        keys: ["singkil", "aceh singkil", "max-use-template-kantahv1", "KANTAH_SINGKIL", "updating_singkil", "AKfycbznF7sao5KfIKYOdy_-Uy5fPBkD078NLCstF-qBvK7yluGZ8DGOyamis4KlHr9ARzwe_A"]
+      }
+    ];
+
+    let maxuseKantahContext = {
+      email: "",
+      nama: DEFAULT_NAMA_KANTAH,
+      kode: DEFAULT_KODE_KANTAH,
+      server: DEFAULT_SERVER,
+      back: DEFAULT_BACK,
+      detected: false
+    };
 
     const params = new URLSearchParams(location.search);
     const emailInput = document.getElementById("emailInput");
@@ -257,33 +290,65 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     init();
 
     function init(){
-      const email = (params.get("email") || DEFAULT_EMAIL || "").trim().toLowerCase();
-      const namaKantah = (params.get("nama_kantah") || DEFAULT_NAMA_KANTAH).trim();
-      const kodeKantah = (params.get("kode_kantah") || DEFAULT_KODE_KANTAH).trim();
+      maxuseKantahContext = resolveKantahContext();
 
-      emailInput.value = email;
-      serverInput.value = (params.get("server") || DEFAULT_SERVER).trim();
-      backInput.value = (params.get("back") || DEFAULT_BACK).trim();
+      emailInput.value = maxuseKantahContext.email;
+      serverInput.value = maxuseKantahContext.server;
+      backInput.value = maxuseKantahContext.back;
 
-      kantahBox.innerHTML = "Terhubung ke " + escapeHtml(namaKantah || DEFAULT_NAMA_KANTAH) +
-        "<small>Kode: " + escapeHtml(kodeKantah || "BELUM_TERBACA") + " · notifikasi untuk akun petugas ini.</small>";
+      const detectLabel = maxuseKantahContext.detected ? " · auto-detect" : "";
+      kantahBox.innerHTML = "Terhubung ke " + escapeHtml(maxuseKantahContext.nama || DEFAULT_NAMA_KANTAH) +
+        "<small>Kode: " + escapeHtml(maxuseKantahContext.kode || "BELUM_TERBACA") + detectLabel + " · notifikasi untuk akun petugas ini.</small>";
 
       const missing = [];
-      if(!email) missing.push("email");
-      if(!serverInput.value) missing.push("server");
-      if(!backInput.value) missing.push("back");
-      if(!kodeKantah) missing.push("kode_kantah");
+      if(!maxuseKantahContext.email) missing.push("email");
+      if(!maxuseKantahContext.server) missing.push("server");
+      if(!maxuseKantahContext.back) missing.push("back");
+      if(!maxuseKantahContext.kode) missing.push("kode_kantah");
 
       if(missing.length){
         setStatus(
           "Status: parameter Kantah belum lengkap.\n" +
           "Kurang: " + missing.join(", ") + "\n\n" +
-          "Buka halaman ini dari menu Updating Kantah agar token tidak salah tersimpan.",
+          "Solusi mudah: buka dari menu Updating Kantah. Untuk admin, pastikan tombol aktivasi mengirim server, back, kode_kantah, dan nama_kantah.",
           "bad"
         );
       }else{
-        setStatus("Status: siap diaktifkan untuk " + email + ".\nKlik tombol biru lalu pilih Izinkan di browser.", "warn");
+        const extra = maxuseKantahContext.detected ? "\nCatatan: Kantah dikenali otomatis dari link lama." : "";
+        setStatus("Status: siap diaktifkan untuk " + maxuseKantahContext.email + ".\nKlik tombol biru lalu pilih Izinkan di browser." + extra, "warn");
       }
+    }
+
+    function resolveKantahContext(){
+      const raw = {
+        email: (params.get("email") || DEFAULT_EMAIL || "").trim().toLowerCase(),
+        nama: (params.get("nama_kantah") || "").trim(),
+        kode: (params.get("kode_kantah") || "").trim(),
+        server: (params.get("server") || DEFAULT_SERVER || "").trim(),
+        back: (params.get("back") || DEFAULT_BACK || "").trim(),
+        source: (params.get("source") || "").trim()
+      };
+
+      const haystack = [raw.kode, raw.nama, raw.server, raw.back, raw.source, location.href].join(" | ").toLowerCase();
+      let detected = null;
+
+      for(const item of KANTAH_REGISTRY){
+        const keys = Array.isArray(item.keys) ? item.keys : [];
+        if(keys.some(k => k && haystack.includes(String(k).toLowerCase()))){
+          detected = item;
+          break;
+        }
+      }
+
+      return {
+        email: raw.email,
+        nama: raw.nama || (detected && detected.nama) || DEFAULT_NAMA_KANTAH,
+        kode: raw.kode || (detected && detected.kode) || DEFAULT_KODE_KANTAH,
+        server: raw.server || (detected && detected.server) || DEFAULT_SERVER,
+        back: raw.back || (detected && detected.back) || DEFAULT_BACK,
+        source: raw.source || ((raw.kode || (detected && detected.kode)) ? "updating_" + String(raw.kode || detected.kode).toLowerCase() + "_v12_1" : "updating_kantah_v12_1"),
+        detected: !!(!raw.kode && detected)
+      };
     }
 
     window.addEventListener("error", function(event){
@@ -300,8 +365,8 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
     function currentServer(){ return String(serverInput.value || "").trim(); }
     function currentBack(){ return String(backInput.value || "").trim(); }
     function currentNamaPetugas(){ return String(params.get("nama_petugas") || params.get("nama") || "").trim(); }
-    function currentKodeKantah(){ return String(params.get("kode_kantah") || DEFAULT_KODE_KANTAH || "").trim(); }
-    function currentNamaKantah(){ return String(params.get("nama_kantah") || DEFAULT_NAMA_KANTAH || "MAX-USE Kantah").trim(); }
+    function currentKodeKantah(){ return String(maxuseKantahContext.kode || params.get("kode_kantah") || DEFAULT_KODE_KANTAH || "").trim(); }
+    function currentNamaKantah(){ return String(maxuseKantahContext.nama || params.get("nama_kantah") || DEFAULT_NAMA_KANTAH || "MAX-USE Kantah").trim(); }
 
     function setStatus(text, type){
       statusBox.textContent = text;
@@ -320,7 +385,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
         "MAX-USE GitHub Notifier V11",
         navigator.userAgent || "",
         "tz=" + (Intl.DateTimeFormat().resolvedOptions().timeZone || ""),
-        "source=" + (params.get("source") || "updating_kantah_v12")
+        "source=" + (maxuseKantahContext.source || params.get("source") || "updating_kantah_v12_1")
       ].join(" | ").slice(0, 900);
     }
 
@@ -342,7 +407,7 @@ Klik tombol biru lalu pilih Izinkan di browser.</div>
       url = addParam(url, "kode_kantah", currentKodeKantah());
       url = addParam(url, "nama_kantah", currentNamaKantah());
       url = addParam(url, "app_version", APP_VERSION);
-      url = addParam(url, "source", params.get("source") || "updating_kantah_v12");
+      url = addParam(url, "source", maxuseKantahContext.source || params.get("source") || "updating_kantah_v12_1");
       url = addParam(url, "t", Date.now());
       return url;
     }
